@@ -1,0 +1,16 @@
+name: PowerShell smoke test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify and smoke test
+        shell: powershell
+        run: |
+          .\scripts\verify.ps1 -SkipWorkBuddyCheck
+          .\tests\smoke.ps1

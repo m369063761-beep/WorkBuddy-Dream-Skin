@@ -1,0 +1,77 @@
+/* WorkBuddy Dream Skin MVP. All rules are scoped behind .wbds-active. */
+html.wbds-active {
+  --wbds-background: __WBDS_BACKGROUND__;
+  --wbds-position: __WBDS_POSITION__;
+  --wbds-size: __WBDS_SIZE__;
+  --wbds-overlay: __WBDS_OVERLAY__;
+  --wbds-panel: __WBDS_PANEL__;
+  --wbds-blur: __WBDS_BLUR__px;
+  --wbds-saturation: __WBDS_SATURATION__;
+  --wbds-radius: __WBDS_RADIUS__px;
+}
+
+html.wbds-active,
+html.wbds-active body {
+  background: transparent !important;
+}
+
+html.wbds-active #wbds-background {
+  position: fixed;
+  inset: 0;
+  z-index: -2147483647;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(8, 10, 18, var(--wbds-overlay)), rgba(8, 10, 18, var(--wbds-overlay))),
+    var(--wbds-background);
+  background-position: center, var(--wbds-position);
+  background-size: cover, var(--wbds-size);
+  background-repeat: no-repeat;
+  transform: translateZ(0);
+}
+
+/* Keep the application root above the background while exposing the backdrop. */
+html.wbds-active body > #root,
+html.wbds-active body > [id*="root"],
+html.wbds-active body > #root > div:first-child,
+html.wbds-active body > [id*="root"] > div:first-child,
+html.wbds-active [class*="app-container" i],
+html.wbds-active [class*="app-layout" i],
+html.wbds-active [class*="_gridViewItem_"],
+html.wbds-active .main-content {
+  position: relative;
+  z-index: 0;
+  background: transparent !important;
+}
+
+/* Stable structural hints first; class-name fallbacks are deliberately scoped. */
+html.wbds-active :is(aside, nav),
+html.wbds-active [class*="sidebar" i],
+html.wbds-active [class*="sider" i],
+html.wbds-active [class*="conversation" i],
+html.wbds-active [class*="chat-panel" i],
+html.wbds-active [class*="artifact" i] {
+  background-color: rgba(24, 25, 36, var(--wbds-panel)) !important;
+  backdrop-filter: blur(var(--wbds-blur)) saturate(var(--wbds-saturation));
+}
+
+html.wbds-active :is(textarea, input),
+html.wbds-active [contenteditable="true"],
+html.wbds-active [class*="composer" i],
+html.wbds-active [class*="input-container" i] {
+  backdrop-filter: blur(var(--wbds-blur)) saturate(var(--wbds-saturation));
+}
+
+html.wbds-active :is(button, textarea, input),
+html.wbds-active [class*="card" i] {
+  border-radius: var(--wbds-radius);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.wbds-active #wbds-background {
+    animation: wbds-breathe 16s ease-in-out infinite alternate;
+  }
+  @keyframes wbds-breathe {
+    from { filter: brightness(0.96) saturate(1); transform: scale(1); }
+    to { filter: brightness(1.04) saturate(1.08); transform: scale(1.015); }
+  }
+}
