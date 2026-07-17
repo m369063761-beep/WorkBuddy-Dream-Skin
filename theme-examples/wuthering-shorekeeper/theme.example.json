@@ -1,0 +1,18 @@
+{
+  "id": "wuthering-shorekeeper",
+  "name": "Wuthering Waves - Shorekeeper",
+  "description": "守岸人、星海、蝴蝶与蓝紫共鸣",
+  "kind": "local-ip",
+  "styleFile": "../../themes/dream/theme.css",
+  "backgroundImage": "background.jpg",
+  "backgroundFallback": "linear-gradient(145deg, #071422, #17295d 58%, #080d24)",
+  "backgroundPosition": "center center",
+  "backgroundSize": "cover",
+  "overlayOpacity": 0.3,
+  "panelOpacity": 0.7,
+  "panelBlurPx": 22,
+  "panelSaturation": 1.12,
+  "radiusPx": 16,
+  "homeOverlayOpacity": 0.3,
+  "taskOverlayOpacity": 0.62
+}

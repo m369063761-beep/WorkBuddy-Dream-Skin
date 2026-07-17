@@ -123,10 +123,13 @@ function Get-WbdsThemeCss {
 
     $themeFile = (Resolve-Path -LiteralPath $ThemePath).Path
     $themeDirectory = Split-Path -Parent $themeFile
-    $theme = Get-Content -LiteralPath $themeFile -Raw | ConvertFrom-Json
-    $cssPath = Join-Path $themeDirectory 'theme.css'
-    $css = Get-Content -LiteralPath $cssPath -Raw
+    $theme = Get-Content -LiteralPath $themeFile -Raw -Encoding UTF8 | ConvertFrom-Json
+    $styleFile = if ($theme.PSObject.Properties['styleFile'] -and $theme.styleFile) { [string]$theme.styleFile } else { 'theme.css' }
+    $cssPath = Join-Path $themeDirectory $styleFile
+    $css = Get-Content -LiteralPath $cssPath -Raw -Encoding UTF8
     $background = ConvertTo-WbdsBackgroundValue -Theme $theme -ThemeDirectory $themeDirectory
+    $homeOverlay = if ($theme.PSObject.Properties['homeOverlayOpacity']) { [double]$theme.homeOverlayOpacity } else { [double]$theme.overlayOpacity }
+    $taskOverlay = if ($theme.PSObject.Properties['taskOverlayOpacity']) { [double]$theme.taskOverlayOpacity } else { [Math]::Min(0.85, ([double]$theme.overlayOpacity + 0.2)) }
     $replacements = @{
         '__WBDS_BACKGROUND__' = $background
         '__WBDS_POSITION__' = [string]$theme.backgroundPosition
@@ -136,9 +139,63 @@ function Get-WbdsThemeCss {
         '__WBDS_BLUR__' = ([double]$theme.panelBlurPx).ToString([Globalization.CultureInfo]::InvariantCulture)
         '__WBDS_SATURATION__' = ([double]$theme.panelSaturation).ToString([Globalization.CultureInfo]::InvariantCulture)
         '__WBDS_RADIUS__' = ([double]$theme.radiusPx).ToString([Globalization.CultureInfo]::InvariantCulture)
+        '__WBDS_HOME_OVERLAY__' = $homeOverlay.ToString([Globalization.CultureInfo]::InvariantCulture)
+        '__WBDS_TASK_OVERLAY__' = $taskOverlay.ToString([Globalization.CultureInfo]::InvariantCulture)
     }
     foreach ($key in $replacements.Keys) { $css = $css.Replace($key, $replacements[$key]) }
-    return @{ Name = [string]$theme.name; Css = $css }
+    return @{ Id = [string]$theme.id; Name = [string]$theme.name; Css = $css }
+}
+
+function Get-WbdsThemes {
+    param([Parameter(Mandatory = $true)][string]$ProjectRoot)
+
+    $roots = @(
+        (Join-Path $ProjectRoot 'themes'),
+        (Join-Path $ProjectRoot 'themes-local')
+    )
+    $themes = foreach ($root in $roots) {
+        if (-not (Test-Path -LiteralPath $root -PathType Container)) { continue }
+        foreach ($file in (Get-ChildItem -LiteralPath $root -Recurse -Filter theme.json -File -ErrorAction SilentlyContinue)) {
+            try {
+                $config = Get-Content -LiteralPath $file.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
+                [pscustomobject]@{
+                    Id = [string]$config.id
+                    Name = [string]$config.name
+                    Description = [string]$config.description
+                    Kind = [string]$config.kind
+                    Path = $file.FullName
+                    HasBackground = (-not $config.backgroundImage) -or (Test-Path -LiteralPath (Join-Path $file.DirectoryName ([string]$config.backgroundImage)))
+                }
+            } catch {
+                Write-Warning "Skipped invalid theme: $($file.FullName)"
+            }
+        }
+    }
+    return @($themes | Sort-Object Kind, Name)
+}
+
+function Get-WbdsStatePath {
+    param([Parameter(Mandatory = $true)][string]$ProjectRoot)
+    $stateDirectory = Join-Path $ProjectRoot 'work'
+    New-Item -ItemType Directory -Path $stateDirectory -Force | Out-Null
+    return (Join-Path $stateDirectory 'state.json')
+}
+
+function Save-WbdsThemeState {
+    param([string]$ProjectRoot, [string]$ThemeId, [string]$ThemePath)
+    @{ themeId = $ThemeId; themePath = $ThemePath; savedAt = (Get-Date).ToString('o') } |
+        ConvertTo-Json | Set-Content -LiteralPath (Get-WbdsStatePath -ProjectRoot $ProjectRoot) -Encoding UTF8
+}
+
+function Get-WbdsSavedThemePath {
+    param([string]$ProjectRoot)
+    $path = Get-WbdsStatePath -ProjectRoot $ProjectRoot
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $null }
+    try {
+        $state = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($state.themePath -and (Test-Path -LiteralPath $state.themePath -PathType Leaf)) { return [string]$state.themePath }
+    } catch {}
+    return $null
 }
 
 function Set-WbdsTheme {
@@ -167,6 +224,15 @@ function Set-WbdsTheme {
     document.body.prepend(background);
   }
   document.documentElement.classList.add('wbds-active');
+  const updatePageMode = () => {
+    const isHome = !!document.querySelector('.main-content--welcome');
+    document.documentElement.classList.toggle('wbds-home', isHome);
+    document.documentElement.classList.toggle('wbds-task', !isHome);
+  };
+  updatePageMode();
+  if (window.__wbdsModeObserver) window.__wbdsModeObserver.disconnect();
+  window.__wbdsModeObserver = new MutationObserver(updatePageMode);
+  window.__wbdsModeObserver.observe(document.body, {subtree: true, childList: true});
   document.documentElement.dataset.wbdsTheme = $nameLiteral;
   return { ok: true, theme: $nameLiteral, title: document.title };
 })()
@@ -189,6 +255,11 @@ function Remove-WbdsTheme {
   document.getElementById('wbds-theme-style')?.remove();
   document.getElementById('wbds-background')?.remove();
   document.documentElement.classList.remove('wbds-active');
+  document.documentElement.classList.remove('wbds-home', 'wbds-task');
+  if (window.__wbdsModeObserver) {
+    window.__wbdsModeObserver.disconnect();
+    delete window.__wbdsModeObserver;
+  }
   delete document.documentElement.dataset.wbdsTheme;
   return { ok: true, title: document.title };
 })()
@@ -203,4 +274,4 @@ function Remove-WbdsTheme {
     return $result
 }
 
-Export-ModuleMember -Function Get-WbdsWorkBuddyPath, Get-WbdsTarget, Wait-WbdsTarget, Invoke-WbdsCdpCommand, Set-WbdsTheme, Remove-WbdsTheme
+Export-ModuleMember -Function Get-WbdsWorkBuddyPath, Get-WbdsTarget, Wait-WbdsTarget, Invoke-WbdsCdpCommand, Set-WbdsTheme, Remove-WbdsTheme, Get-WbdsThemes, Get-WbdsSavedThemePath, Save-WbdsThemeState

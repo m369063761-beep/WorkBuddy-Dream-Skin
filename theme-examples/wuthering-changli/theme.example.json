@@ -1,0 +1,18 @@
+{
+  "id": "wuthering-changli",
+  "name": "Wuthering Waves - Changli",
+  "description": "长离、赤羽、暗红与凤凰火",
+  "kind": "local-ip",
+  "styleFile": "../../themes/dream/theme.css",
+  "backgroundImage": "background.jpg",
+  "backgroundFallback": "linear-gradient(145deg, #170b12, #4a111d 58%, #160a0e)",
+  "backgroundPosition": "center center",
+  "backgroundSize": "cover",
+  "overlayOpacity": 0.32,
+  "panelOpacity": 0.74,
+  "panelBlurPx": 20,
+  "panelSaturation": 1.16,
+  "radiusPx": 14,
+  "homeOverlayOpacity": 0.32,
+  "taskOverlayOpacity": 0.64
+}

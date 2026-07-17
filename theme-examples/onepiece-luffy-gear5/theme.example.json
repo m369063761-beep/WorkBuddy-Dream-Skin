@@ -1,0 +1,18 @@
+{
+  "id": "onepiece-luffy-gear5",
+  "name": "One Piece - Luffy Gear 5",
+  "description": "路飞五档尼卡、月光、白云与自由之海",
+  "kind": "local-ip",
+  "styleFile": "../../themes/dream/theme.css",
+  "backgroundImage": "background.jpg",
+  "backgroundFallback": "linear-gradient(145deg, #0d1730, #33375c 55%, #12172a)",
+  "backgroundPosition": "center center",
+  "backgroundSize": "cover",
+  "overlayOpacity": 0.27,
+  "panelOpacity": 0.7,
+  "panelBlurPx": 20,
+  "panelSaturation": 1.12,
+  "radiusPx": 18,
+  "homeOverlayOpacity": 0.27,
+  "taskOverlayOpacity": 0.6
+}

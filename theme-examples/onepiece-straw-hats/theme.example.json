@@ -1,0 +1,18 @@
+{
+  "id": "onepiece-straw-hats",
+  "name": "One Piece - Straw Hat Crew",
+  "description": "草帽团、晴空、海浪与冒险甲板",
+  "kind": "local-ip",
+  "styleFile": "../../themes/dream/theme.css",
+  "backgroundImage": "background.jpg",
+  "backgroundFallback": "linear-gradient(145deg, #09233d, #285978 55%, #14263a)",
+  "backgroundPosition": "center center",
+  "backgroundSize": "cover",
+  "overlayOpacity": 0.3,
+  "panelOpacity": 0.7,
+  "panelBlurPx": 18,
+  "panelSaturation": 1.14,
+  "radiusPx": 16,
+  "homeOverlayOpacity": 0.3,
+  "taskOverlayOpacity": 0.62
+}

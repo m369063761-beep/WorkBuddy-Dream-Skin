@@ -1,5 +1,8 @@
 {
+  "id": "dream-glass",
   "name": "Dream Glass",
+  "description": "紫粉星云与深海蓝玻璃质感",
+  "kind": "built-in",
   "backgroundImage": "",
   "backgroundFallback": "radial-gradient(circle at 18% 20%, #7357ff 0, transparent 34%), radial-gradient(circle at 82% 16%, #e78bbd 0, transparent 30%), linear-gradient(145deg, #16132c 0%, #24234a 46%, #101827 100%)",
   "backgroundPosition": "center center",
@@ -8,6 +11,7 @@
   "panelOpacity": 0.76,
   "panelBlurPx": 20,
   "panelSaturation": 1.12,
-  "radiusPx": 14
+  "radiusPx": 14,
+  "homeOverlayOpacity": 0.34,
+  "taskOverlayOpacity": 0.56
 }
-

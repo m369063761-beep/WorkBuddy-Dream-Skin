@@ -1,0 +1,18 @@
+{
+  "id": "sakura-night",
+  "name": "Sakura Night",
+  "description": "原创月夜樱花与城市倒影",
+  "kind": "built-in",
+  "styleFile": "../dream/theme.css",
+  "backgroundImage": "",
+  "backgroundFallback": "linear-gradient(145deg, #14182d, #37213d 55%, #10192a)",
+  "backgroundPosition": "center center",
+  "backgroundSize": "cover",
+  "overlayOpacity": 0.28,
+  "panelOpacity": 0.72,
+  "panelBlurPx": 22,
+  "panelSaturation": 1.08,
+  "radiusPx": 16,
+  "homeOverlayOpacity": 0.28,
+  "taskOverlayOpacity": 0.58
+}

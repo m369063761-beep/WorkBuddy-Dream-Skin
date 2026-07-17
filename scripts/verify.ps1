@@ -29,7 +29,7 @@ if ($target) {
 
 $themePath = Join-Path $projectRoot 'themes\dream\theme.json'
 try {
-    $null = Get-Content -LiteralPath $themePath -Raw | ConvertFrom-Json
+    $null = Get-Content -LiteralPath $themePath -Raw -Encoding UTF8 | ConvertFrom-Json
     $checks += [pscustomobject]@{ Check = 'Theme configuration'; Result = 'PASS'; Detail = $themePath }
 } catch {
     $checks += [pscustomobject]@{ Check = 'Theme configuration'; Result = 'FAIL'; Detail = $_.Exception.Message }

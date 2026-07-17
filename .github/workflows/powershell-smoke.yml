@@ -13,4 +13,5 @@ jobs:
         shell: powershell
         run: |
           .\scripts\verify.ps1 -SkipWorkBuddyCheck
+          .\tests\theme-system.ps1
           .\tests\smoke.ps1

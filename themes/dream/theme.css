@@ -8,6 +8,16 @@ html.wbds-active {
   --wbds-blur: __WBDS_BLUR__px;
   --wbds-saturation: __WBDS_SATURATION__;
   --wbds-radius: __WBDS_RADIUS__px;
+  --wbds-home-overlay: __WBDS_HOME_OVERLAY__;
+  --wbds-task-overlay: __WBDS_TASK_OVERLAY__;
+}
+
+html.wbds-active.wbds-home {
+  --wbds-overlay: var(--wbds-home-overlay);
+}
+
+html.wbds-active.wbds-task {
+  --wbds-overlay: var(--wbds-task-overlay);
 }
 
 html.wbds-active,
