@@ -1,4 +1,4 @@
-Set-StrictMode -Version 2.0
+﻿Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
 function Get-WbdsWorkBuddyPath {
@@ -198,6 +198,44 @@ function Get-WbdsSavedThemePath {
     return $null
 }
 
+function New-WbdsCustomTheme {
+    param(
+        [Parameter(Mandatory = $true)][string]$ProjectRoot,
+        [Parameter(Mandatory = $true)][string]$BaseThemePath,
+        [Parameter(Mandatory = $true)][string]$BackgroundPath
+    )
+
+    $image = Get-Item -LiteralPath $BackgroundPath -ErrorAction Stop
+    if ($image.Length -gt 12MB) { throw 'The background image must be 12 MB or smaller.' }
+    $extension = $image.Extension.ToLowerInvariant()
+    if ($extension -notin @('.jpg', '.jpeg', '.png', '.webp', '.gif')) { throw 'Supported image types: JPG, PNG, WebP, and GIF.' }
+
+    $config = Get-Content -LiteralPath $BaseThemePath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $baseId = ([string]$config.id) -replace '^custom-', ''
+    if (-not $baseId) { throw 'The base theme must have an id.' }
+    $customId = "custom-$baseId"
+    $targetDirectory = Join-Path $ProjectRoot "themes-local\$customId"
+    New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
+    Get-ChildItem -LiteralPath $targetDirectory -Filter 'background.*' -File -ErrorAction SilentlyContinue | Remove-Item -Force
+    $targetImage = Join-Path $targetDirectory ("background{0}" -f $extension)
+    Copy-Item -LiteralPath $image.FullName -Destination $targetImage -Force
+
+    $baseName = ([string]$config.name) -replace '^我的图片 · ', ''
+    $config.id = $customId
+    $config.name = "我的图片 · $baseName"
+    $config.description = '本地自定义背景；不会上传到仓库。'
+    $config.kind = 'custom'
+    $config.backgroundImage = [IO.Path]::GetFileName($targetImage)
+    if ($config.PSObject.Properties['styleFile']) {
+        $config.styleFile = '../../themes/dream/theme.css'
+    } else {
+        $config | Add-Member -NotePropertyName styleFile -NotePropertyValue '../../themes/dream/theme.css'
+    }
+    $targetConfig = Join-Path $targetDirectory 'theme.json'
+    $config | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $targetConfig -Encoding UTF8
+    return [pscustomobject]@{ Id = $customId; Path = $targetConfig; ImagePath = $targetImage }
+}
+
 function Set-WbdsTheme {
     param(
         [Parameter(Mandatory = $true)][string]$WebSocketUrl,
@@ -274,4 +312,4 @@ function Remove-WbdsTheme {
     return $result
 }
 
-Export-ModuleMember -Function Get-WbdsWorkBuddyPath, Get-WbdsTarget, Wait-WbdsTarget, Invoke-WbdsCdpCommand, Set-WbdsTheme, Remove-WbdsTheme, Get-WbdsThemes, Get-WbdsSavedThemePath, Save-WbdsThemeState
+Export-ModuleMember -Function Get-WbdsWorkBuddyPath, Get-WbdsTarget, Wait-WbdsTarget, Invoke-WbdsCdpCommand, Set-WbdsTheme, Remove-WbdsTheme, Get-WbdsThemes, Get-WbdsSavedThemePath, Save-WbdsThemeState, New-WbdsCustomTheme

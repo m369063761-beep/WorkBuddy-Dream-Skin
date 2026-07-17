@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1-rc.1
+
+- Add a single-window graphical Theme Studio with theme previews.
+- Add local image import for JPG, PNG, WebP, and GIF backgrounds.
+- Add a current-user installer with Desktop and Start Menu shortcuts.
+- Add a safe uninstaller and preserve local themes during reinstall/update.
+- Add reproducible Release ZIP and SHA256 generation.
+- Add promotion-candidate integration tests and a manual acceptance guide.
+
 ## 0.2.0
 
 - Add automatic discovery of public and local themes.
@@ -13,4 +22,3 @@
 ## 0.1.0
 
 - Initial Windows CDP injector, Dream Glass theme, restore command, and smoke test.
-

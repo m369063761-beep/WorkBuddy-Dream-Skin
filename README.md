@@ -2,12 +2,15 @@
 
 给腾讯 WorkBuddy 桌面端换一张会呼吸的脸。
 
-当前版本：**V0.2.0**。通过仅绑定本机的 Chrome DevTools Protocol（CDP）向 WorkBuddy 主窗口动态注入背景和样式。它不修改 `WorkBuddy.exe`、`app.asar` 或官方安装目录。
+当前版本：**V0.2.1 RC1**。通过仅绑定本机的 Chrome DevTools Protocol（CDP）向 WorkBuddy 主窗口动态注入背景和样式。它不修改 `WorkBuddy.exe`、`app.asar` 或官方安装目录。
 
 > 非腾讯官方产品。WorkBuddy 及相关商标归其权利人所有。
 
 ## 当前能力
 
+- 图形化主题中心：预览、导入图片、应用主题、恢复官方外观
+- 当前用户一键安装，无需管理员权限
+- 自动创建桌面和开始菜单快捷方式
 - 自动寻找当前用户安装的 WorkBuddy
 - 启动 WorkBuddy 并打开仅限 `127.0.0.1` 的 CDP 端口
 - 注入渐变或你自己的 JPG、PNG、WebP、GIF 背景
@@ -22,43 +25,25 @@
 
 要求：Windows 10/11、PowerShell 5.1 或更高版本、已安装 WorkBuddy。
 
-1. 完全退出 WorkBuddy，包括托盘进程。
-2. 双击 `Start Dream Skin.cmd`。
-3. 要移除当前主题，双击 `Restore WorkBuddy.cmd`。
-4. 要切换主题，双击 `Switch Theme.cmd`。
+1. 从 GitHub Releases 下载 ZIP 并解压。
+2. 双击 `Install WorkBuddy Dream Skin.cmd`。
+3. 以后从桌面打开 `WorkBuddy Dream Skin`。
+4. 在主题中心选择主题，或点击“导入自己的图片”。
+5. 完全退出 WorkBuddy（包括托盘进程），点击“应用主题”。
+
+不想安装时，也可以直接双击 `Theme Studio.cmd` 使用便携模式。命令行入口 `Start Dream Skin.cmd`、`Switch Theme.cmd` 和 `Restore WorkBuddy.cmd` 仍然保留。
 
 如果 WorkBuddy 是正常方式启动的，脚本不会强制关闭它，而是提示你先退出。这是为了避免打断正在执行的任务。
 
 ## 使用自己的背景图
 
-把图片放进 `themes/dream/`，例如：
+在主题中心先选择一个基础样式，再点击“导入自己的图片”。图片会复制到本机 `themes-local/`，不会上传到 GitHub，也不会在重新安装时被覆盖。
 
-```text
-themes/dream/my-background.jpg
-```
-
-然后修改 `themes/dream/theme.json`：
-
-```json
-{
-  "name": "My Dream",
-  "backgroundImage": "my-background.jpg",
-  "backgroundFallback": "linear-gradient(145deg, #16132c, #101827)",
-  "backgroundPosition": "center center",
-  "backgroundSize": "cover",
-  "overlayOpacity": 0.34,
-  "panelOpacity": 0.76,
-  "panelBlurPx": 20,
-  "panelSaturation": 1.12,
-  "radiusPx": 14
-}
-```
-
-MVP 将图片转换为 data URL 后注入，图片大小限制为 12 MB。这避免了本地文件权限和额外 HTTP 服务。
+支持 JPG、PNG、WebP 和 GIF，大小限制为 12 MB。工具将图片转换为 data URL 后注入，避免额外启动本地 HTTP 服务。
 
 ## V0.2 动漫主题壳
 
-双击 `Install Anime Theme Shells.cmd` 会在本机 `themes-local/` 安装以下配色壳：
+主题中心首次打开会自动在本机 `themes-local/` 准备以下配色壳：
 
 - Wuthering Waves - Shorekeeper
 - Wuthering Waves - Changli
@@ -107,7 +92,9 @@ powershell -ExecutionPolicy Bypass -File .\tests\smoke.ps1
 
 ## MVP 范围
 
-V0.2 验证多主题闭环：发现、安装、切换、记忆、首页/任务页强度变化与恢复。托盘主题管理、自动取色、主题商店和 macOS 支持留到后续版本。
+V0.2.1 RC1 验证普通用户闭环：下载、安装、预览、导入图片、切换、记忆、恢复和卸载。托盘主题管理、自动取色、主题商店、自动更新和 macOS 支持留到后续版本。
+
+发布前人工验收步骤见 [`docs/testing-guide.md`](docs/testing-guide.md)。
 
 ## License
 
