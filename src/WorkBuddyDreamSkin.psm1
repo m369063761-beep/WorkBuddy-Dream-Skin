@@ -130,6 +130,11 @@ function Get-WbdsThemeCss {
     $background = ConvertTo-WbdsBackgroundValue -Theme $theme -ThemeDirectory $themeDirectory
     $homeOverlay = if ($theme.PSObject.Properties['homeOverlayOpacity']) { [double]$theme.homeOverlayOpacity } else { [double]$theme.overlayOpacity }
     $taskOverlay = if ($theme.PSObject.Properties['taskOverlayOpacity']) { [double]$theme.taskOverlayOpacity } else { [Math]::Min(0.85, ([double]$theme.overlayOpacity + 0.2)) }
+    $themeValue = {
+        param([string]$Name, [string]$Fallback)
+        if ($theme.PSObject.Properties[$Name] -and $theme.$Name) { return [string]$theme.$Name }
+        return $Fallback
+    }
     $replacements = @{
         '__WBDS_BACKGROUND__' = $background
         '__WBDS_POSITION__' = [string]$theme.backgroundPosition
@@ -141,9 +146,20 @@ function Get-WbdsThemeCss {
         '__WBDS_RADIUS__' = ([double]$theme.radiusPx).ToString([Globalization.CultureInfo]::InvariantCulture)
         '__WBDS_HOME_OVERLAY__' = $homeOverlay.ToString([Globalization.CultureInfo]::InvariantCulture)
         '__WBDS_TASK_OVERLAY__' = $taskOverlay.ToString([Globalization.CultureInfo]::InvariantCulture)
+        '__WBDS_COLOR_SCHEME__' = (& $themeValue 'colorScheme' 'dark')
+        '__WBDS_CANVAS__' = (& $themeValue 'canvasColor' '#111522')
+        '__WBDS_SURFACE__' = (& $themeValue 'surfaceColor' '#181d2c')
+        '__WBDS_SURFACE_RAISED__' = (& $themeValue 'surfaceRaisedColor' '#22283a')
+        '__WBDS_SIDEBAR__' = (& $themeValue 'sidebarColor' '#151a29')
+        '__WBDS_TEXT__' = (& $themeValue 'textColor' '#f4f5fb')
+        '__WBDS_TEXT_MUTED__' = (& $themeValue 'mutedTextColor' '#aeb5c9')
+        '__WBDS_ACCENT__' = (& $themeValue 'accentColor' '#8b7cff')
+        '__WBDS_ACCENT_CONTRAST__' = (& $themeValue 'accentContrastColor' '#ffffff')
+        '__WBDS_BORDER__' = (& $themeValue 'borderColor' '#3d4358')
+        '__WBDS_HERO_SHADE__' = (& $themeValue 'heroShadeColor' 'rgba(17, 21, 34, 0.92)')
     }
     foreach ($key in $replacements.Keys) { $css = $css.Replace($key, $replacements[$key]) }
-    return @{ Id = [string]$theme.id; Name = [string]$theme.name; Css = $css }
+    return @{ Id = [string]$theme.id; Name = [string]$theme.name; Scheme = (& $themeValue 'colorScheme' 'dark'); Css = $css }
 }
 
 function Get-WbdsThemes {
@@ -202,7 +218,12 @@ function New-WbdsCustomTheme {
     param(
         [Parameter(Mandatory = $true)][string]$ProjectRoot,
         [Parameter(Mandatory = $true)][string]$BaseThemePath,
-        [Parameter(Mandatory = $true)][string]$BackgroundPath
+        [Parameter(Mandatory = $true)][string]$BackgroundPath,
+        [string]$CustomId,
+        [string]$CustomName,
+        [string]$Description = '本地自定义背景；不会上传到仓库。',
+        [string]$BackgroundPosition,
+        [hashtable]$Palette
     )
 
     $image = Get-Item -LiteralPath $BackgroundPath -ErrorAction Stop
@@ -213,7 +234,8 @@ function New-WbdsCustomTheme {
     $config = Get-Content -LiteralPath $BaseThemePath -Raw -Encoding UTF8 | ConvertFrom-Json
     $baseId = ([string]$config.id) -replace '^custom-', ''
     if (-not $baseId) { throw 'The base theme must have an id.' }
-    $customId = "custom-$baseId"
+    $customId = if ($CustomId) { $CustomId } else { "custom-$baseId" }
+    if ($customId -notmatch '^[a-z0-9][a-z0-9-]*$') { throw 'The custom theme id may only contain lowercase letters, numbers, and hyphens.' }
     $targetDirectory = Join-Path $ProjectRoot "themes-local\$customId"
     New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
     Get-ChildItem -LiteralPath $targetDirectory -Filter 'background.*' -File -ErrorAction SilentlyContinue | Remove-Item -Force
@@ -222,10 +244,20 @@ function New-WbdsCustomTheme {
 
     $baseName = ([string]$config.name) -replace '^我的图片 · ', ''
     $config.id = $customId
-    $config.name = "我的图片 · $baseName"
-    $config.description = '本地自定义背景；不会上传到仓库。'
+    $config.name = if ($CustomName) { $CustomName } else { "我的图片 · $baseName" }
+    $config.description = $Description
     $config.kind = 'custom'
     $config.backgroundImage = [IO.Path]::GetFileName($targetImage)
+    if ($BackgroundPosition) { $config.backgroundPosition = $BackgroundPosition }
+    if ($Palette) {
+        foreach ($entry in $Palette.GetEnumerator()) {
+            if ($config.PSObject.Properties[$entry.Key]) {
+                $config.($entry.Key) = $entry.Value
+            } else {
+                $config | Add-Member -NotePropertyName $entry.Key -NotePropertyValue $entry.Value
+            }
+        }
+    }
     if ($config.PSObject.Properties['styleFile']) {
         $config.styleFile = '../../themes/dream/theme.css'
     } else {
@@ -244,6 +276,7 @@ function Set-WbdsTheme {
     $theme = Get-WbdsThemeCss -ThemePath $ThemePath
     $cssLiteral = $theme.Css | ConvertTo-Json -Compress
     $nameLiteral = $theme.Name | ConvertTo-Json -Compress
+    $schemeLiteral = $theme.Scheme | ConvertTo-Json -Compress
     $expression = @"
 (() => {
   const css = $cssLiteral;
@@ -272,7 +305,8 @@ function Set-WbdsTheme {
   window.__wbdsModeObserver = new MutationObserver(updatePageMode);
   window.__wbdsModeObserver.observe(document.body, {subtree: true, childList: true});
   document.documentElement.dataset.wbdsTheme = $nameLiteral;
-  return { ok: true, theme: $nameLiteral, title: document.title };
+  document.documentElement.dataset.wbdsScheme = $schemeLiteral;
+  return { ok: true, theme: $nameLiteral, scheme: $schemeLiteral, title: document.title };
 })()
 "@
     $result = Invoke-WbdsCdpCommand -WebSocketUrl $WebSocketUrl -Method 'Runtime.evaluate' -Params @{
@@ -299,6 +333,7 @@ function Remove-WbdsTheme {
     delete window.__wbdsModeObserver;
   }
   delete document.documentElement.dataset.wbdsTheme;
+  delete document.documentElement.dataset.wbdsScheme;
   return { ok: true, title: document.title };
 })()
 "@
@@ -312,4 +347,4 @@ function Remove-WbdsTheme {
     return $result
 }
 
-Export-ModuleMember -Function Get-WbdsWorkBuddyPath, Get-WbdsTarget, Wait-WbdsTarget, Invoke-WbdsCdpCommand, Set-WbdsTheme, Remove-WbdsTheme, Get-WbdsThemes, Get-WbdsSavedThemePath, Save-WbdsThemeState, New-WbdsCustomTheme
+Export-ModuleMember -Function Get-WbdsWorkBuddyPath, Get-WbdsTarget, Wait-WbdsTarget, Invoke-WbdsCdpCommand, Get-WbdsThemeCss, Set-WbdsTheme, Remove-WbdsTheme, Get-WbdsThemes, Get-WbdsSavedThemePath, Save-WbdsThemeState, New-WbdsCustomTheme

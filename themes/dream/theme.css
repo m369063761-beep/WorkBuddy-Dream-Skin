@@ -1,5 +1,6 @@
-/* WorkBuddy Dream Skin MVP. All rules are scoped behind .wbds-active. */
+/* WorkBuddy Dream Skin full-window theme system. */
 html.wbds-active {
+  color-scheme: __WBDS_COLOR_SCHEME__;
   --wbds-background: __WBDS_BACKGROUND__;
   --wbds-position: __WBDS_POSITION__;
   --wbds-size: __WBDS_SIZE__;
@@ -10,28 +11,40 @@ html.wbds-active {
   --wbds-radius: __WBDS_RADIUS__px;
   --wbds-home-overlay: __WBDS_HOME_OVERLAY__;
   --wbds-task-overlay: __WBDS_TASK_OVERLAY__;
+  --wbds-canvas: __WBDS_CANVAS__;
+  --wbds-surface: __WBDS_SURFACE__;
+  --wbds-surface-raised: __WBDS_SURFACE_RAISED__;
+  --wbds-sidebar: __WBDS_SIDEBAR__;
+  --wbds-text: __WBDS_TEXT__;
+  --wbds-text-muted: __WBDS_TEXT_MUTED__;
+  --wbds-accent: __WBDS_ACCENT__;
+  --wbds-accent-contrast: __WBDS_ACCENT_CONTRAST__;
+  --wbds-border: __WBDS_BORDER__;
+  --wbds-hero-shade: __WBDS_HERO_SHADE__;
+  --wbds-accent-soft: color-mix(in srgb, var(--wbds-accent) 17%, var(--wbds-surface));
+  --wbds-accent-hover: color-mix(in srgb, var(--wbds-accent) 27%, var(--wbds-surface));
+  --wbds-line-soft: color-mix(in srgb, var(--wbds-border) 52%, transparent);
+  --wbds-shadow: 0 18px 54px color-mix(in srgb, var(--wbds-canvas) 68%, transparent);
 }
 
-html.wbds-active.wbds-home {
-  --wbds-overlay: var(--wbds-home-overlay);
-}
-
-html.wbds-active.wbds-task {
-  --wbds-overlay: var(--wbds-task-overlay);
-}
+html.wbds-active.wbds-home { --wbds-overlay: var(--wbds-home-overlay); }
+html.wbds-active.wbds-task { --wbds-overlay: var(--wbds-task-overlay); }
 
 html.wbds-active,
 html.wbds-active body {
-  background: transparent !important;
+  background: var(--wbds-canvas) !important;
+  color: var(--wbds-text) !important;
+  font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", system-ui, sans-serif !important;
 }
 
 html.wbds-active #wbds-background {
   position: fixed;
   inset: 0;
-  z-index: -2147483647;
+  z-index: 0;
   pointer-events: none;
+  background-color: var(--wbds-canvas);
   background-image:
-    linear-gradient(rgba(8, 10, 18, var(--wbds-overlay)), rgba(8, 10, 18, var(--wbds-overlay))),
+    linear-gradient(color-mix(in srgb, var(--wbds-canvas) 62%, transparent), color-mix(in srgb, var(--wbds-canvas) 62%, transparent)),
     var(--wbds-background);
   background-position: center, var(--wbds-position);
   background-size: cover, var(--wbds-size);
@@ -39,49 +52,499 @@ html.wbds-active #wbds-background {
   transform: translateZ(0);
 }
 
-/* Keep the application root above the background while exposing the backdrop. */
+html.wbds-active.wbds-home #wbds-background {
+  background-image: none;
+}
+
+/* Native window chrome participates in the same theme. */
+html.wbds-active #workbuddy-menubar-container,
+html.wbds-active #workbuddy-window-controls-container,
+html.wbds-active .codebuddy-menubar,
+html.wbds-active .workbuddy-window-control-button {
+  color: var(--wbds-text) !important;
+  background: var(--wbds-sidebar) !important;
+  border-color: var(--wbds-line-soft) !important;
+}
+
+html.wbds-active #workbuddy-menubar-container {
+  box-shadow: inset 0 -1px var(--wbds-line-soft) !important;
+}
+
+html.wbds-active .menubar-menu-button:hover,
+html.wbds-active .workbuddy-window-control-button:hover {
+  color: var(--wbds-text) !important;
+  background: var(--wbds-accent-soft) !important;
+}
+
+/* Expose the coordinated theme canvas through WorkBuddy's grid. */
 html.wbds-active body > #root,
-html.wbds-active body > [id*="root"],
 html.wbds-active body > #root > div:first-child,
-html.wbds-active body > [id*="root"] > div:first-child,
-html.wbds-active [class*="app-container" i],
-html.wbds-active [class*="app-layout" i],
-html.wbds-active [class*="_gridViewItem_"],
-html.wbds-active .main-content {
+html.wbds-active .teams-container,
+html.wbds-active [class*="_grid_"] ,
+html.wbds-active [class*="_gridView_"] ,
+html.wbds-active [class*="_gridViewItem_"] {
   position: relative;
+  z-index: 1;
+  background: transparent !important;
+  color: var(--wbds-text) !important;
+}
+
+/* Left column: a real themed surface, not the untouched native dark rail. */
+html.wbds-active .conversation-sidebar,
+html.wbds-active .conversation-list {
+  color: var(--wbds-text) !important;
+  background: color-mix(in srgb, var(--wbds-sidebar) 92%, transparent) !important;
+  border-right: 1px solid var(--wbds-line-soft) !important;
+  box-shadow: inset -1px 0 color-mix(in srgb, var(--wbds-surface-raised) 24%, transparent) !important;
+  backdrop-filter: blur(18px) saturate(1.04) !important;
+}
+
+html.wbds-active .conversation-list :is(button, [role="button"]),
+html.wbds-active .conversation-list :is(svg, span, div),
+html.wbds-active .conversation-list-footer,
+html.wbds-active .user-menu-trigger {
+  color: inherit !important;
+  border-color: transparent !important;
+}
+
+html.wbds-active .conversation-list :is(button, [role="button"]):hover,
+html.wbds-active .conversation-item:hover,
+html.wbds-active .conversation-list-tab-button:hover {
+  color: var(--wbds-text) !important;
+  background: var(--wbds-accent-soft) !important;
+}
+
+html.wbds-active .conversation-list :is(.active, [aria-selected="true"], [aria-current="page"]),
+html.wbds-active .conversation-item.active,
+html.wbds-active .conversation-list-tab-button.active {
+  color: var(--wbds-text) !important;
+  background: var(--wbds-accent-hover) !important;
+  box-shadow: inset 3px 0 var(--wbds-accent), inset 0 0 0 1px var(--wbds-line-soft) !important;
+}
+
+html.wbds-active .conversation-section-label,
+html.wbds-active .conversation-list-version-badge,
+html.wbds-active .conversation-item :is(time, [class*="time" i]) {
+  color: var(--wbds-text-muted) !important;
+}
+
+html.wbds-active .conversation-list .conversation-item .conversation-agent-card [class*="_title_"],
+html.wbds-active .conversation-list .conversation-item [class*="_title_"] {
+  color: var(--wbds-text) !important;
+}
+
+html.wbds-active .conversation-list .conversation-item [class*="_time_"],
+html.wbds-active .conversation-list .conversation-item time {
+  color: var(--wbds-text-muted) !important;
+}
+
+html.wbds-active .collapsible-section-header {
+  color: var(--wbds-text) !important;
+  background: var(--wbds-accent-soft) !important;
+  border: 1px solid var(--wbds-line-soft) !important;
+  border-radius: 12px !important;
+}
+
+html.wbds-active .conversation-list-logo,
+html.wbds-active .logo-workbuddy-title {
+  color: var(--wbds-accent) !important;
+}
+
+html.wbds-active .conversation-list-footer {
+  background: color-mix(in srgb, var(--wbds-sidebar) 88%, transparent) !important;
+  border-top: 1px solid var(--wbds-line-soft) !important;
+}
+
+/* Right column and header. */
+html.wbds-active .teams-content-wrapper,
+html.wbds-active .teams-main-content,
+html.wbds-active .main-content {
+  color: var(--wbds-text) !important;
+  background: var(--wbds-canvas) !important;
+}
+
+html.wbds-active .workbuddy-topbar {
+  color: var(--wbds-text) !important;
+  background: color-mix(in srgb, var(--wbds-canvas) 82%, transparent) !important;
+  border-bottom: 1px solid var(--wbds-line-soft) !important;
+  backdrop-filter: blur(14px) saturate(1.04) !important;
+}
+
+html.wbds-active .workbuddy-topbar-title {
+  color: var(--wbds-text) !important;
+}
+
+html.wbds-active .menubar-menu-title {
+  color: var(--wbds-text) !important;
+}
+
+html.wbds-active .growth-plan-entry {
+  color: var(--wbds-text) !important;
+  background: var(--wbds-accent-soft) !important;
+  border: 1px solid var(--wbds-line-soft) !important;
+  border-radius: 999px !important;
+}
+
+html.wbds-active .growth-plan-entry__icon circle {
+  fill: var(--wbds-accent) !important;
+}
+
+/* Home: one immersive art card containing native WorkBuddy controls. */
+html.wbds-active.wbds-home .main-content--welcome {
+  background: var(--wbds-canvas) !important;
+}
+
+html.wbds-active.wbds-home .chat-container--welcome {
+  box-sizing: border-box !important;
+  width: calc(100% - 32px) !important;
+  max-width: none !important;
+  height: calc(100% - 16px) !important;
+  margin: 0 16px 16px !important;
+  overflow: visible !important;
+}
+
+html.wbds-active.wbds-home .wb-cb-chat,
+html.wbds-active.wbds-home [class*="_emptyStateContainer_"],
+html.wbds-active.wbds-home [class*="_inlineInputContainer_"] {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  overflow: visible !important;
+}
+
+html.wbds-active.wbds-home .wb-home-page {
+  box-sizing: border-box !important;
+  position: relative !important;
+  isolation: isolate !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  min-height: 600px !important;
+  margin: 0 !important;
+  padding: 34px 36px 28px !important;
+  overflow: hidden !important;
+  color: var(--wbds-text) !important;
+  border: 1px solid var(--wbds-border) !important;
+  border-radius: 24px !important;
+  background-color: var(--wbds-surface) !important;
+  background-image: var(--wbds-background) !important;
+  background-repeat: no-repeat !important;
+  background-position: var(--wbds-position) !important;
+  background-size: var(--wbds-size) !important;
+  box-shadow: var(--wbds-shadow) !important;
+}
+
+html.wbds-active.wbds-home .wb-home-page::before {
+  content: "";
+  position: absolute;
   z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    var(--wbds-hero-shade) 0%,
+    color-mix(in srgb, var(--wbds-hero-shade) 94%, transparent) 38%,
+    color-mix(in srgb, var(--wbds-hero-shade) 58%, transparent) 58%,
+    transparent 82%);
+}
+
+html.wbds-active.wbds-home .wb-home-page::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: auto 0 0;
+  height: 48%;
+  pointer-events: none;
+  background: linear-gradient(0deg, color-mix(in srgb, var(--wbds-surface) 80%, transparent), transparent);
+}
+
+html.wbds-active.wbds-home .wb-home-page > * {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+html.wbds-active.wbds-home .wb-home-header {
+  box-sizing: border-box !important;
+  width: min(52%, 460px) !important;
+  min-height: 122px !important;
+  padding: 10px 8px !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  text-align: left !important;
+}
+
+html.wbds-active.wbds-home .wb-home-header__title,
+html.wbds-active.wbds-home .wb-home-header__subtitle {
+  color: var(--wbds-text) !important;
+  text-align: left !important;
+  text-shadow: 0 2px 18px color-mix(in srgb, var(--wbds-surface) 82%, transparent) !important;
+}
+
+html.wbds-active.wbds-home .wb-home-header__title {
+  font-size: clamp(30px, 3.2vw, 44px) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -0.03em !important;
+}
+
+html.wbds-active.wbds-home .wb-home-header__subtitle {
+  margin-top: 10px !important;
+  color: var(--wbds-text-muted) !important;
+  font-size: 20px !important;
+}
+
+html.wbds-active.wbds-home .wb-scene-tabs {
+  color: var(--wbds-text) !important;
+  background: color-mix(in srgb, var(--wbds-surface-raised) 78%, transparent) !important;
+  border: 1px solid var(--wbds-line-soft) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--wbds-canvas) 32%, transparent) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+html.wbds-active.wbds-home .wb-scene-tabs__pill {
+  color: var(--wbds-text-muted) !important;
+  border-radius: 999px !important;
+}
+
+html.wbds-active.wbds-home .wb-scene-tabs__pill:hover {
+  color: var(--wbds-text) !important;
+  background: var(--wbds-accent-soft) !important;
+}
+
+html.wbds-active.wbds-home .wb-scene-tabs__pill--active {
+  color: var(--wbds-accent-contrast) !important;
+  background: var(--wbds-accent) !important;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--wbds-accent) 30%, transparent) !important;
+}
+
+html.wbds-active.wbds-home .wb-home-composer {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin-top: auto !important;
+  gap: 14px !important;
+}
+
+html.wbds-active.wbds-home .wb-home-composer__chips {
+  width: 100% !important;
+  padding-right: 0 !important;
+}
+
+html.wbds-active.wbds-home :is(.quick-actions-container, .quick-actions, .quick-actions__list) {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+html.wbds-active.wbds-home .quick-actions__list {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+html.wbds-active.wbds-home .quick-actions__item {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  height: 96px !important;
+  padding: 14px 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 9px !important;
+  color: var(--wbds-text) !important;
+  text-align: center !important;
+  white-space: normal !important;
+  border: 1px solid var(--wbds-line-soft) !important;
+  border-radius: 17px !important;
+  background: color-mix(in srgb, var(--wbds-surface-raised) 82%, transparent) !important;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--wbds-canvas) 34%, transparent) !important;
+  backdrop-filter: blur(12px) saturate(1.04) !important;
+  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease !important;
+}
+
+html.wbds-active.wbds-home .quick-actions__item:hover {
+  transform: translateY(-3px) !important;
+  color: var(--wbds-text) !important;
+  border-color: var(--wbds-accent) !important;
+  background: var(--wbds-accent-soft) !important;
+}
+
+html.wbds-active.wbds-home .quick-actions__item-icon {
+  width: 38px !important;
+  height: 38px !important;
+  display: grid !important;
+  place-items: center !important;
+  color: var(--wbds-accent-contrast) !important;
+  border-radius: 13px !important;
+  background: var(--wbds-accent) !important;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--wbds-accent) 15%, transparent) !important;
+}
+
+html.wbds-active.wbds-home .wb-home-composer__input-slot,
+html.wbds-active.wbds-home [class*="_container_pf4c4_"] {
+  width: 100% !important;
+}
+
+html.wbds-active.wbds-home [class*="_container_pf4c4_"] {
+  color: var(--wbds-text) !important;
+  border: 1px solid var(--wbds-border) !important;
+  border-radius: 18px !important;
+  background: color-mix(in srgb, var(--wbds-surface-raised) 90%, transparent) !important;
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--wbds-canvas) 42%, transparent) !important;
+  backdrop-filter: blur(16px) saturate(1.06) !important;
+}
+
+html.wbds-active.wbds-home [class*="_mainArea_pf4c4_"],
+html.wbds-active.wbds-home [class*="_content_pf4c4_"] {
+  color: var(--wbds-text) !important;
   background: transparent !important;
 }
 
-/* Stable structural hints first; class-name fallbacks are deliberately scoped. */
-html.wbds-active :is(aside, nav),
-html.wbds-active [class*="sidebar" i],
-html.wbds-active [class*="sider" i],
-html.wbds-active [class*="conversation" i],
-html.wbds-active [class*="chat-panel" i],
-html.wbds-active [class*="artifact" i] {
-  background-color: rgba(24, 25, 36, var(--wbds-panel)) !important;
-  backdrop-filter: blur(var(--wbds-blur)) saturate(var(--wbds-saturation));
+html.wbds-active.wbds-home [role="textbox"],
+html.wbds-active.wbds-home [data-slate-placeholder="true"] {
+  color: var(--wbds-text) !important;
+  caret-color: var(--wbds-accent) !important;
 }
 
-html.wbds-active :is(textarea, input),
-html.wbds-active [contenteditable="true"],
-html.wbds-active [class*="composer" i],
-html.wbds-active [class*="input-container" i] {
-  backdrop-filter: blur(var(--wbds-blur)) saturate(var(--wbds-saturation));
+html.wbds-active.wbds-home .wb-input-footer,
+html.wbds-active.wbds-home .wb-input-footer button,
+html.wbds-active.wbds-home [class*="_inputBottom_"] button {
+  color: var(--wbds-text-muted) !important;
 }
 
-html.wbds-active :is(button, textarea, input),
-html.wbds-active [class*="card" i] {
+html.wbds-active.wbds-home .wb-input-footer button:hover,
+html.wbds-active.wbds-home [class*="_inputBottom_"] button:hover {
+  color: var(--wbds-text) !important;
+  background: var(--wbds-accent-soft) !important;
+}
+
+/* Task/detail routes: keep the artwork atmospheric and every panel themed. */
+html.wbds-active.wbds-task .main-content,
+html.wbds-active.wbds-task .detail-panel-container,
+html.wbds-active.wbds-task .detail-panel,
+html.wbds-active.wbds-task .detail-layout,
+html.wbds-active.wbds-task .sidebar-next {
+  color: var(--wbds-text) !important;
+  background: color-mix(in srgb, var(--wbds-surface) 82%, transparent) !important;
+  backdrop-filter: none !important;
+}
+
+html.wbds-active.wbds-task .teams-content-wrapper,
+html.wbds-active.wbds-task .teams-main-content {
+  background: transparent !important;
+}
+
+html.wbds-active.wbds-task .detail-sidebar,
+html.wbds-active.wbds-task .sidebar-next-main-header,
+html.wbds-active.wbds-task [class*="input-area-container"],
+html.wbds-active.wbds-task [class*="composer" i] {
+  color: var(--wbds-text) !important;
+  background: color-mix(in srgb, var(--wbds-surface-raised) 90%, transparent) !important;
+  border-color: var(--wbds-line-soft) !important;
+  backdrop-filter: none !important;
+}
+
+html.wbds-active.wbds-task .detail-sidebar__header-slot,
+html.wbds-active.wbds-task [class*="_container_pf4c4_"],
+html.wbds-active.wbds-task [class*="_mainArea_pf4c4_"],
+html.wbds-active.wbds-task [class*="_content_pf4c4_"] {
+  color: var(--wbds-text) !important;
+  background: color-mix(in srgb, var(--wbds-surface-raised) 92%, transparent) !important;
+  border-color: var(--wbds-line-soft) !important;
+}
+
+html.wbds-active.wbds-task [class*="input-area-container"] :is(button, [role="button"]) {
+  color: var(--wbds-text) !important;
+  background: var(--wbds-accent-soft) !important;
+}
+
+html.wbds-active.wbds-task [class*="input-area-container"] :is([role="textbox"], textarea, input),
+html.wbds-active.wbds-task [class*="input-area-container"] [data-slate-placeholder="true"] {
+  color: var(--wbds-text) !important;
+  caret-color: var(--wbds-accent) !important;
+}
+
+html.wbds-active.wbds-task [class*="input-area-container"]::before {
+  content: none !important;
+  background: none !important;
+}
+
+html.wbds-active.wbds-task :is(article, [data-message-author-role], [role="main"], [role="textbox"]) {
+  color: var(--wbds-text) !important;
+}
+
+html.wbds-active.wbds-task .detail-panel :is(p, span, div, a, li, code, pre) {
+  color: var(--wbds-text) !important;
+}
+
+html.wbds-active.wbds-task .chat-container .wb-cb-chat :is(
+  [class*="_userMessage"],
+  [class*="_userMessage"] *,
+  [class*="_assistant"],
+  [class*="_assistant"] *,
+  .cb-markdown,
+  .cb-markdown *
+) {
+  color: var(--wbds-text) !important;
+}
+
+html.wbds-active.wbds-task .detail-panel :is(.cb-task-progress__step-text, [class*="_time_"], [class*="timestamp" i]) {
+  color: var(--wbds-text-muted) !important;
+}
+
+html.wbds-active.wbds-task :is(button, [role="button"]):hover {
+  background: var(--wbds-accent-soft) !important;
+}
+
+/* Shared controls and focus states. */
+html.wbds-active :is(button, textarea, input, [role="button"], [role="tab"], [role="combobox"]) {
   border-radius: var(--wbds-radius);
 }
 
+html.wbds-active :is(button, textarea, input, [contenteditable="true"]):focus-visible {
+  outline: 2px solid var(--wbds-accent) !important;
+  outline-offset: 2px !important;
+}
+
+html.wbds-active ::selection {
+  color: var(--wbds-accent-contrast);
+  background: var(--wbds-accent);
+}
+
+html.wbds-active ::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--wbds-accent) 42%, transparent) !important;
+  border-radius: 999px !important;
+}
+
+html.wbds-active ::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+html.wbds-active .workbuddy-window-control-button {
+  border-radius: 0 !important;
+}
+
+@media (max-width: 980px) {
+  html.wbds-active.wbds-home .wb-home-page {
+    padding: 26px 24px 22px !important;
+  }
+  html.wbds-active.wbds-home .wb-home-header {
+    width: 58% !important;
+  }
+  html.wbds-active.wbds-home .quick-actions__list {
+    gap: 8px !important;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  html.wbds-active #wbds-background {
-    animation: wbds-breathe 16s ease-in-out infinite alternate;
+  html.wbds-active.wbds-task #wbds-background {
+    animation: wbds-breathe 18s ease-in-out infinite alternate;
   }
   @keyframes wbds-breathe {
-    from { filter: brightness(0.96) saturate(1); transform: scale(1); }
-    to { filter: brightness(1.04) saturate(1.08); transform: scale(1.015); }
+    from { filter: brightness(.97) saturate(1); transform: scale(1); }
+    to { filter: brightness(1.03) saturate(1.06); transform: scale(1.012); }
   }
 }

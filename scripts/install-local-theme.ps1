@@ -23,6 +23,14 @@ if ($BackgroundPath) {
     $targetImage = Join-Path $targetDirectory ("background{0}" -f $extension)
     Copy-Item -LiteralPath $BackgroundPath -Destination $targetImage -Force
     $config.backgroundImage = [IO.Path]::GetFileName($targetImage)
+} else {
+    $packagedImage = Get-ChildItem -LiteralPath $exampleDirectory -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Extension.ToLowerInvariant() -in @('.jpg', '.jpeg', '.png', '.webp', '.gif') } |
+        Select-Object -First 1
+    if ($packagedImage) {
+        Copy-Item -LiteralPath $packagedImage.FullName -Destination (Join-Path $targetDirectory $packagedImage.Name) -Force
+        $config.backgroundImage = $packagedImage.Name
+    }
 }
 $config.styleFile = '../../themes/dream/theme.css'
 $config | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $configPath -Encoding UTF8

@@ -13,10 +13,29 @@ function Initialize-WbdsThemeShells {
         $source = Join-Path $example.FullName 'theme.example.json'
         $targetDirectory = Join-Path $localRoot $example.Name
         $target = Join-Path $targetDirectory 'theme.json'
-        if ((Test-Path -LiteralPath $source -PathType Leaf) -and -not (Test-Path -LiteralPath $target -PathType Leaf)) {
+        if (Test-Path -LiteralPath $source -PathType Leaf) {
             New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
             $config = Get-Content -LiteralPath $source -Raw -Encoding UTF8 | ConvertFrom-Json
-            $config.backgroundImage = ''
+            $existingImage = ''
+            if (Test-Path -LiteralPath $target -PathType Leaf) {
+                try {
+                    $existing = Get-Content -LiteralPath $target -Raw -Encoding UTF8 | ConvertFrom-Json
+                    if ($existing.backgroundImage) {
+                        $candidate = Join-Path $targetDirectory ([string]$existing.backgroundImage)
+                        if (Test-Path -LiteralPath $candidate -PathType Leaf) { $existingImage = [string]$existing.backgroundImage }
+                    }
+                } catch {}
+            }
+            if (-not $existingImage) {
+                $packagedImage = Get-ChildItem -LiteralPath $example.FullName -File -ErrorAction SilentlyContinue |
+                    Where-Object { $_.Extension.ToLowerInvariant() -in @('.jpg', '.jpeg', '.png', '.webp', '.gif') } |
+                    Select-Object -First 1
+                if ($packagedImage) {
+                    Copy-Item -LiteralPath $packagedImage.FullName -Destination (Join-Path $targetDirectory $packagedImage.Name) -Force
+                    $existingImage = $packagedImage.Name
+                }
+            }
+            $config.backgroundImage = $existingImage
             $config | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $target -Encoding UTF8
         }
     }
@@ -69,7 +88,7 @@ Add-Type -AssemblyName System.Windows.Forms
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <StackPanel Grid.Row="0" Margin="0,0,0,20">
       <TextBlock Text="WorkBuddy Dream Skin" FontSize="28" FontWeight="SemiBold"/>
-      <TextBlock Text="选择主题、导入自己的图片，然后一键应用。图片只保存在本机。" Foreground="#AEB4CF" Margin="0,7,0,0"/>
+      <TextBlock Text="每个内置主题包含图片与整套界面配色；导入图片只替换当前主题的壁纸。" Foreground="#AEB4CF" Margin="0,7,0,0"/>
     </StackPanel>
     <Grid Grid.Row="1">
       <Grid.ColumnDefinitions><ColumnDefinition Width="360"/><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -103,7 +122,7 @@ Add-Type -AssemblyName System.Windows.Forms
       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
       <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="#AEB4CF" Text="请选择一个主题。" TextWrapping="Wrap"/>
       <StackPanel Grid.Column="1" Orientation="Horizontal">
-        <Button x:Name="ImportButton" Content="导入自己的图片" Style="{StaticResource SecondaryButton}"/>
+        <Button x:Name="ImportButton" Content="只替换主题图片" Style="{StaticResource SecondaryButton}"/>
         <Button x:Name="RestoreButton" Content="恢复官方外观" Style="{StaticResource SecondaryButton}"/>
         <Button x:Name="ApplyButton" Content="应用主题"/>
       </StackPanel>

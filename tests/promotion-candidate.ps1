@@ -22,6 +22,8 @@ try {
     if (-not (Test-Path -LiteralPath $custom.ImagePath -PathType Leaf)) { throw 'Custom image was not copied.' }
     $discovered = Get-WbdsThemes -ProjectRoot $projectRoot | Where-Object Id -eq $custom.Id
     if (-not $discovered -or -not $discovered.HasBackground) { throw 'Custom theme was not discovered as ready.' }
+    $customConfig = Get-Content -LiteralPath $custom.Path -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($customConfig.accentColor -ne $sourceConfig.accentColor) { throw 'Custom image replacement did not preserve the base theme palette.' }
 
     & (Join-Path $projectRoot 'scripts\install.ps1') -InstallPath $installTarget -NoLaunch -NoShortcuts
     $marker = Join-Path $installTarget 'themes-local\preserve-me.txt'
@@ -29,7 +31,7 @@ try {
     & (Join-Path $projectRoot 'scripts\install.ps1') -InstallPath $installTarget -NoLaunch -NoShortcuts
     if (-not (Test-Path -LiteralPath $marker -PathType Leaf)) { throw 'Installer update did not preserve local themes.' }
     if (-not (Test-Path -LiteralPath (Join-Path $installTarget 'Theme Studio.cmd') -PathType Leaf)) { throw 'Installed Theme Studio entry point is missing.' }
-    Write-Host 'PASS: custom image, install, and update-preservation tests passed.' -ForegroundColor Green
+    Write-Host 'PASS: custom image, palette, install, and update-preservation tests passed.' -ForegroundColor Green
 } finally {
     if (Test-Path -LiteralPath $customDirectory) { Remove-Item -LiteralPath $customDirectory -Recurse -Force }
     if (Test-Path -LiteralPath $testRoot) { Remove-Item -LiteralPath $testRoot -Recurse -Force }
