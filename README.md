@@ -2,7 +2,7 @@
 
 给腾讯 WorkBuddy 桌面端换一张会呼吸的脸。
 
-当前版本：**V0.2.1**。通过仅绑定本机的 Chrome DevTools Protocol（CDP）向 WorkBuddy 主窗口动态注入背景和样式。它不修改 `WorkBuddy.exe`、`app.asar` 或官方安装目录。
+当前版本：**V0.2.2**。通过仅绑定本机的 Chrome DevTools Protocol（CDP）向 WorkBuddy 主窗口动态注入背景和样式。它不修改 `WorkBuddy.exe`、`app.asar` 或官方安装目录。
 
 > 非腾讯官方产品。WorkBuddy 及相关商标归其权利人所有。
 
@@ -49,9 +49,9 @@
 
 ## 制作客户定制安装包
 
-双击 `制作客户定制包.cmd`，填写客户名称、选择客户照片和基础配色，然后点击“生成客户安装包”。工具会在指定文件夹生成：
+双击 `制作客户定制包.cmd`，填写客户名称并选择客户照片。默认的“自动匹配照片（推荐）”会在本机分析照片的主色、明暗、饱和度和对比度，自动生成侧栏、按钮、卡片、文字和边框的完整浅色或深色色板。你也可以切换到手动基础配色进行风格覆盖。然后点击“生成客户安装包”，工具会在指定文件夹生成：
 
-- `WorkBuddy-定制皮肤-客户名-Windows-v0.2.1.zip`
+- `WorkBuddy-定制皮肤-客户名-Windows-v0.2.2.zip`
 - 对应的 `.sha256` 校验文件
 
 客户只需要解压 ZIP，双击 `Install WorkBuddy Dream Skin.cmd`。安装完成后主题中心会自动选中该客户的专属主题。客户不需要 Git、GitHub Desktop、`gh` 或管理员权限。
@@ -109,7 +109,7 @@ powershell -ExecutionPolicy Bypass -File .\tests\smoke.ps1
 
 ## MVP 范围
 
-V0.2.1 验证普通用户闭环：下载、安装、预览、导入图片、切换、记忆、恢复和卸载；同时验证定制服务方从客户照片生成独立安装 ZIP 的交付闭环。代码签名、支付、在线后台、自动更新和 macOS 支持留到后续版本。
+V0.2.2 验证普通用户闭环：下载、安装、预览、导入图片、切换、记忆、恢复和卸载；同时验证定制服务方从客户照片自动取色并生成独立安装 ZIP 的交付闭环。代码签名、支付、在线后台、自动更新和 macOS 支持留到后续版本。
 
 发布前人工验收步骤见 [`docs/testing-guide.md`](docs/testing-guide.md)。
 

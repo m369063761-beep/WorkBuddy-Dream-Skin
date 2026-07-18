@@ -47,7 +47,7 @@ Add-Type -AssemblyName System.Windows.Forms
         <TextBox x:Name="ClientNameText"/>
         <TextBlock Text="主题显示名称（可选）" Foreground="#C8CEE4" Margin="0,16,0,6"/>
         <TextBox x:Name="ThemeNameText"/>
-        <TextBlock Text="基础配色" Foreground="#C8CEE4" Margin="0,16,0,6"/>
+        <TextBlock Text="配色方式" Foreground="#C8CEE4" Margin="0,16,0,6"/>
         <ComboBox x:Name="BaseThemeCombo" DisplayMemberPath="Name"/>
         <TextBlock Text="客户照片" Foreground="#C8CEE4" Margin="0,16,0,6"/>
         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
@@ -60,12 +60,13 @@ Add-Type -AssemblyName System.Windows.Forms
           <Button x:Name="BrowseOutputButton" Grid.Column="1" Content="选择文件夹" Style="{StaticResource SecondaryButton}"/>
         </Grid>
       </StackPanel>
-      <Border Grid.Column="2" Background="#191D2E" BorderBrush="#39415F" BorderThickness="1" CornerRadius="18" ClipToBounds="True">
+      <Border x:Name="PreviewBorder" Grid.Column="2" Background="#191D2E" BorderBrush="#39415F" BorderThickness="2" CornerRadius="18" ClipToBounds="True">
         <Grid>
           <Image x:Name="ImagePreview" Stretch="UniformToFill"/>
           <Border VerticalAlignment="Bottom" Background="#CC111522" Padding="18">
             <StackPanel>
               <TextBlock Text="客户主题预览" FontSize="18" FontWeight="SemiBold"/>
+              <TextBlock x:Name="PaletteSummaryText" Text="自动取色等待照片" Foreground="#9E91FF" Margin="0,5,0,0"/>
               <TextBlock Text="建议使用主体清晰、分辨率较高的横图或方图。" Foreground="#BFC5DB" TextWrapping="Wrap" Margin="0,5,0,0"/>
             </StackPanel>
           </Border>
@@ -89,21 +90,48 @@ $baseThemeCombo = $window.FindName('BaseThemeCombo')
 $imagePathText = $window.FindName('ImagePathText')
 $outputPathText = $window.FindName('OutputPathText')
 $imagePreview = $window.FindName('ImagePreview')
+$previewBorder = $window.FindName('PreviewBorder')
+$paletteSummaryText = $window.FindName('PaletteSummaryText')
 $browseImageButton = $window.FindName('BrowseImageButton')
 $browseOutputButton = $window.FindName('BrowseOutputButton')
 $statusText = $window.FindName('StatusText')
 $buildButton = $window.FindName('BuildButton')
 
-$themes = @(Get-WbdsThemes -ProjectRoot $projectRoot | Where-Object { $_.HasBackground -and $_.Kind -ne 'customer' })
+$manualThemes = @(Get-WbdsThemes -ProjectRoot $projectRoot | Where-Object { $_.HasBackground -and $_.Kind -ne 'customer' } | ForEach-Object {
+    [pscustomobject]@{ Id = $_.Id; Name = "手动 · $($_.Name)"; Path = $_.Path; IsAuto = $false }
+})
+$autoTheme = [pscustomobject]@{
+    Id = 'auto-photo'
+    Name = '自动匹配照片（推荐）'
+    Path = (Join-Path $projectRoot 'themes\dream\theme.json')
+    IsAuto = $true
+}
+$themes = @($autoTheme) + $manualThemes
 $baseThemeCombo.ItemsSource = $themes
-$preferred = $themes | Where-Object Id -eq 'dream-glass' | Select-Object -First 1
-if ($preferred) { $baseThemeCombo.SelectedItem = $preferred } elseif ($themes.Count) { $baseThemeCombo.SelectedIndex = 0 }
+$baseThemeCombo.SelectedIndex = 0
 $outputPathText.Text = [Environment]::GetFolderPath('Desktop')
 
 function Set-CustomerPackStatus {
     param([string]$Message, [bool]$IsError = $false)
     $statusText.Text = $Message
     $statusText.Foreground = if ($IsError) { '#FFFF8D8D' } else { '#FFAEB4CF' }
+}
+
+function Update-AutoPalettePreview {
+    if (-not $imagePathText.Text -or -not (Test-Path -LiteralPath $imagePathText.Text -PathType Leaf)) { return }
+    if (-not $baseThemeCombo.SelectedItem.IsAuto) {
+        $paletteSummaryText.Text = '使用手动基础配色'
+        $paletteSummaryText.Foreground = '#FFC4C9DC'
+        $previewBorder.BorderBrush = [Windows.Media.Brushes]::SlateGray
+        return
+    }
+    $analysis = Get-WbdsImagePalette -ImagePath $imagePathText.Text
+    $mode = if ($analysis.Scheme -eq 'light') { '浅色界面' } else { '深色界面' }
+    $paletteSummaryText.Text = "自动识别：$mode · 主色 $($analysis.AccentColor)"
+    $color = [Windows.Media.ColorConverter]::ConvertFromString($analysis.AccentColor)
+    $paletteSummaryText.Foreground = New-Object Windows.Media.SolidColorBrush $color
+    $previewBorder.BorderBrush = New-Object Windows.Media.SolidColorBrush $color
+    Set-CustomerPackStatus "已根据照片生成$mode配色，主色为 $($analysis.AccentColor)。"
 }
 
 $browseImageButton.Add_Click({
@@ -115,7 +143,11 @@ $browseImageButton.Add_Click({
     $bitmap = New-Object Windows.Media.Imaging.BitmapImage
     $bitmap.BeginInit(); $bitmap.CacheOption = 'OnLoad'; $bitmap.UriSource = [Uri]$dialog.FileName; $bitmap.EndInit(); $bitmap.Freeze()
     $imagePreview.Source = $bitmap
-    Set-CustomerPackStatus '照片已选择，只会在本机写入客户安装包。'
+    Update-AutoPalettePreview
+})
+
+$baseThemeCombo.Add_SelectionChanged({
+    try { Update-AutoPalettePreview } catch { Set-CustomerPackStatus $_.Exception.Message $true }
 })
 
 $browseOutputButton.Add_Click({
@@ -137,6 +169,7 @@ $buildButton.Add_Click({
             OutputDirectory = $outputPathText.Text
         }
         if ($themeNameText.Text.Trim()) { $arguments.ThemeName = $themeNameText.Text.Trim() }
+        if ($baseThemeCombo.SelectedItem.IsAuto) { $arguments.AutoPalette = $true }
         $result = & (Join-Path $PSScriptRoot 'build-customer-pack.ps1') @arguments
         Set-CustomerPackStatus "已生成：$($result.Archive)"
         [System.Windows.MessageBox]::Show("客户安装包已生成：`n`n$($result.Archive)`n`n同时生成了 SHA256 校验文件。", '生成完成', 'OK', 'Information') | Out-Null

@@ -20,5 +20,6 @@ Local QA captures (not committed):
 - Passed: the bottom-left profile mark uses the selected theme artwork as a cropped circular character avatar.
 - Passed: the installer exposes an explicit desktop entry named `切换 WorkBuddy 主题` for opening Theme Studio.
 - Passed: custom image replacement preserves the selected base theme palette.
+- Passed: Customer Pack Studio automatic photo analysis selects light/dark mode and coordinates canvas, sidebar, surfaces, controls, borders and readable text with the extracted accent color.
 
 Final result: passed.

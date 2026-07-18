@@ -15,5 +15,6 @@ jobs:
           .\scripts\verify.ps1 -SkipWorkBuddyCheck
           .\tests\theme-system.ps1
           .\tests\promotion-candidate.ps1
+          .\tests\auto-palette.ps1
           .\tests\customer-pack.ps1
           .\tests\smoke.ps1
