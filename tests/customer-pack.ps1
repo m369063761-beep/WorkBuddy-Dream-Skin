@@ -6,13 +6,20 @@ $installTarget = Join-Path $env:LOCALAPPDATA ("WorkBuddyDreamSkin-CustomerTest-{
 
 try {
     New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+    Add-Type -AssemblyName System.Drawing
     $imagePath = Join-Path $testRoot 'customer.png'
-    [IO.File]::WriteAllBytes($imagePath, [Convert]::FromBase64String('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='))
+    $bitmap = New-Object Drawing.Bitmap 24, 24
+    try {
+        $graphics = [Drawing.Graphics]::FromImage($bitmap)
+        try { $graphics.Clear([Drawing.Color]::FromArgb(34, 105, 210)) } finally { $graphics.Dispose() }
+        $bitmap.Save($imagePath, [Drawing.Imaging.ImageFormat]::Png)
+    } finally { $bitmap.Dispose() }
     $result = & (Join-Path $projectRoot 'scripts\build-customer-pack.ps1') `
         -ClientName '测试客户' `
         -ThemeName '测试客户 · 海蓝主题' `
         -BackgroundPath $imagePath `
         -BaseThemePath (Join-Path $projectRoot 'themes\dream\theme.json') `
+        -AutoPalette `
         -OutputDirectory $testRoot `
         -Version 'test'
 
@@ -28,6 +35,10 @@ try {
     if ($defaultThemeId -ne $result.ThemeId) { throw 'Customer default theme id is incorrect.' }
     $themePath = Join-Path $packageRoot.FullName "themes\$defaultThemeId\theme.json"
     if (-not (Test-Path -LiteralPath $themePath -PathType Leaf)) { throw 'Customer theme configuration is missing.' }
+    $customerConfig = Get-Content -LiteralPath $themePath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($customerConfig.accentColor -eq '#9b83ff') { throw 'Automatic palette did not replace the base accent.' }
+    if ($customerConfig.colorScheme -ne 'dark') { throw 'Automatic palette did not select the expected dark scheme.' }
+    if ($result.PaletteMode -notlike '自动取色*') { throw 'Customer result did not report automatic palette mode.' }
     Import-Module (Join-Path $packageRoot.FullName 'src\WorkBuddyDreamSkin.psm1') -Force
     $themeCss = Get-WbdsThemeCss -ThemePath $themePath
     if ($themeCss.Css -match '__WBDS_[A-Z_]+__') { throw 'Customer theme contains an unresolved CSS token.' }

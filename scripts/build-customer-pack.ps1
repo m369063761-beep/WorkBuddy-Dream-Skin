@@ -4,12 +4,14 @@ param(
     [string]$ThemeName,
     [Parameter(Mandatory = $true)][string]$BackgroundPath,
     [string]$BaseThemePath,
+    [switch]$AutoPalette,
     [string]$OutputDirectory,
     [string]$Version
 )
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+Import-Module (Join-Path $projectRoot 'src\WorkBuddyDreamSkin.psm1') -Force
 if (-not $BaseThemePath) { $BaseThemePath = Join-Path $projectRoot 'themes\dream\theme.json' }
 if (-not $OutputDirectory) { $OutputDirectory = [Environment]::GetFolderPath('Desktop') }
 if (-not $Version) { $Version = (Get-Content -LiteralPath (Join-Path $projectRoot 'VERSION') -Raw -Encoding UTF8).Trim() }
@@ -76,6 +78,19 @@ try {
     $config.description = "$client 的本地专属 WorkBuddy 主题。"
     $config.kind = 'customer'
     $config.backgroundImage = $targetImageName
+    $paletteSummary = '手动基础配色'
+    if ($AutoPalette) {
+        $analysis = Get-WbdsImagePalette -ImagePath $image.FullName
+        foreach ($entry in $analysis.Palette.GetEnumerator()) {
+            if ($config.PSObject.Properties[$entry.Key]) {
+                $config.($entry.Key) = $entry.Value
+            } else {
+                $config | Add-Member -NotePropertyName $entry.Key -NotePropertyValue $entry.Value
+            }
+        }
+        $paletteSummary = "自动取色：$($analysis.Scheme) / $($analysis.AccentColor)"
+        $config.description = "$client 的本地专属 WorkBuddy 主题；$paletteSummary。"
+    }
     if ($config.PSObject.Properties['styleFile']) {
         $config.styleFile = '../dream/theme.css'
     } else {
@@ -96,6 +111,8 @@ $client 的 WorkBuddy 定制皮肤
 4. 如果 WorkBuddy 正在运行，请先从系统托盘完全退出。
 5. 点击“应用主题”。以后从桌面的“切换 WorkBuddy 主题”进入。
 
+配色方式：$paletteSummary
+
 隐私说明：本安装包中的客户图片仅在本机使用；工具不会上传图片、账号、任务或 API Key。
 技术支持：请联系向你提供本安装包的定制服务方。
 "@
@@ -112,6 +129,7 @@ $client 的 WorkBuddy 定制皮肤
         HashPath = $hashPath
         ThemeId = $themeId
         ThemeName = [string]$config.name
+        PaletteMode = $paletteSummary
         SHA256 = $hash
     }
 } finally {

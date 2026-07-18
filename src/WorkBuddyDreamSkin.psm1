@@ -118,6 +118,135 @@ function ConvertTo-WbdsBackgroundValue {
     return [string]$Theme.backgroundFallback
 }
 
+function Get-WbdsImagePalette {
+    param([Parameter(Mandatory = $true)][string]$ImagePath)
+
+    Add-Type -AssemblyName System.Drawing
+    $image = Get-Item -LiteralPath $ImagePath -ErrorAction Stop
+    $bitmap = New-Object Drawing.Bitmap $image.FullName
+    try {
+        $stepX = [Math]::Max(1, [int][Math]::Floor($bitmap.Width / 72))
+        $stepY = [Math]::Max(1, [int][Math]::Floor($bitmap.Height / 72))
+        $sumR = 0.0; $sumG = 0.0; $sumB = 0.0; $count = 0
+        $buckets = @{}
+        for ($y = 0; $y -lt $bitmap.Height; $y += $stepY) {
+            for ($x = 0; $x -lt $bitmap.Width; $x += $stepX) {
+                $pixel = $bitmap.GetPixel($x, $y)
+                if ($pixel.A -lt 96) { continue }
+                $sumR += $pixel.R; $sumG += $pixel.G; $sumB += $pixel.B; $count++
+                $max = [Math]::Max($pixel.R, [Math]::Max($pixel.G, $pixel.B))
+                $min = [Math]::Min($pixel.R, [Math]::Min($pixel.G, $pixel.B))
+                $brightness = ($max + $min) / 510.0
+                $saturation = if ($max -eq 0) { 0.0 } else { ($max - $min) / [double]$max }
+                if ($brightness -gt 0.08 -and $brightness -lt 0.94 -and $saturation -gt 0.12) {
+                    $qr = [Math]::Min(255, [int]([Math]::Floor($pixel.R / 32)) * 32 + 16)
+                    $qg = [Math]::Min(255, [int]([Math]::Floor($pixel.G / 32)) * 32 + 16)
+                    $qb = [Math]::Min(255, [int]([Math]::Floor($pixel.B / 32)) * 32 + 16)
+                    $key = "$qr,$qg,$qb"
+                    $weight = 1.0 + ($saturation * 2.5)
+                    if ($buckets.ContainsKey($key)) { $buckets[$key] += $weight } else { $buckets[$key] = $weight }
+                }
+            }
+        }
+        if ($count -eq 0) { throw '图片中没有可分析的可见像素。' }
+        $average = @([int]($sumR / $count), [int]($sumG / $count), [int]($sumB / $count))
+        $dominant = $average
+        if ($buckets.Count) {
+            $top = $buckets.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 1
+            $dominant = @($top.Key.Split(',') | ForEach-Object { [int]$_ })
+        }
+    } finally {
+        $bitmap.Dispose()
+    }
+
+    $clamp = { param([double]$Value) [int][Math]::Max(0, [Math]::Min(255, [Math]::Round($Value))) }
+    $mix = {
+        param([int[]]$A, [int[]]$B, [double]$WeightB)
+        @(
+            (& $clamp ($A[0] * (1 - $WeightB) + $B[0] * $WeightB)),
+            (& $clamp ($A[1] * (1 - $WeightB) + $B[1] * $WeightB)),
+            (& $clamp ($A[2] * (1 - $WeightB) + $B[2] * $WeightB))
+        )
+    }
+    $hex = { param([int[]]$Rgb) '#{0:X2}{1:X2}{2:X2}' -f $Rgb[0], $Rgb[1], $Rgb[2] }
+    $luminance = { param([int[]]$Rgb) (0.2126 * $Rgb[0] + 0.7152 * $Rgb[1] + 0.0722 * $Rgb[2]) / 255.0 }
+    $relativeLuminance = {
+        param([int[]]$Rgb)
+        $channels = @($Rgb | ForEach-Object {
+            $value = $_ / 255.0
+            if ($value -le 0.03928) { $value / 12.92 } else { [Math]::Pow((($value + 0.055) / 1.055), 2.4) }
+        })
+        0.2126 * $channels[0] + 0.7152 * $channels[1] + 0.0722 * $channels[2]
+    }
+
+    $mean = ($dominant[0] + $dominant[1] + $dominant[2]) / 3.0
+    $accent = @(
+        (& $clamp ($mean + ($dominant[0] - $mean) * 1.3)),
+        (& $clamp ($mean + ($dominant[1] - $mean) * 1.3)),
+        (& $clamp ($mean + ($dominant[2] - $mean) * 1.3))
+    )
+    $accentLum = & $luminance $accent
+    if ($accentLum -lt 0.30) { $accent = & $mix $accent @(255, 255, 255) 0.32 }
+    if ($accentLum -gt 0.78) { $accent = & $mix $accent @(0, 0, 0) 0.22 }
+
+    $averageLum = & $luminance $average
+    $scheme = if ($averageLum -ge 0.70) { 'light' } else { 'dark' }
+    $white = @(255, 255, 255); $black = @(0, 0, 0)
+    if ($scheme -eq 'light') {
+        $canvas = & $mix $accent $white 0.91
+        $surface = & $mix $accent $white 0.96
+        $raised = & $mix $accent $white 0.87
+        $sidebar = & $mix $accent $white 0.89
+        $text = & $mix $accent $black 0.78
+        $muted = & $mix $accent $black 0.52
+        $border = & $mix $accent $white 0.58
+        $heroShade = "rgba($($canvas[0]), $($canvas[1]), $($canvas[2]), 0.78)"
+        $overlay = 0.10; $homeOverlay = 0.08; $taskOverlay = 0.45; $panelOpacity = 0.82
+    } else {
+        $canvas = & $mix $accent $black 0.74
+        $surface = & $mix $accent $black 0.64
+        $raised = & $mix $accent $black 0.50
+        $sidebar = & $mix $accent $black 0.70
+        $text = & $mix $accent $white 0.91
+        $muted = & $mix $accent $white 0.62
+        $border = & $mix $accent $black 0.25
+        $heroShade = "rgba($($canvas[0]), $($canvas[1]), $($canvas[2]), 0.74)"
+        $overlay = 0.20; $homeOverlay = 0.18; $taskOverlay = 0.56; $panelOpacity = 0.76
+    }
+    $accentRelative = & $relativeLuminance $accent
+    $darkControlText = @(16, 19, 33)
+    $darkContrast = ($accentRelative + 0.05) / ((& $relativeLuminance $darkControlText) + 0.05)
+    $lightContrast = (1.0 + 0.05) / ($accentRelative + 0.05)
+    $accentContrast = if ($darkContrast -gt $lightContrast) { '#101321' } else { '#FFFFFF' }
+    $accentHex = & $hex $accent
+    $canvasHex = & $hex $canvas
+    $raisedHex = & $hex $raised
+    $palette = @{
+        colorScheme = $scheme
+        canvasColor = $canvasHex
+        surfaceColor = (& $hex $surface)
+        surfaceRaisedColor = $raisedHex
+        sidebarColor = (& $hex $sidebar)
+        textColor = (& $hex $text)
+        mutedTextColor = (& $hex $muted)
+        accentColor = $accentHex
+        accentContrastColor = $accentContrast
+        borderColor = (& $hex $border)
+        heroShadeColor = $heroShade
+        backgroundFallback = "radial-gradient(circle at 78% 18%, $accentHex 0, transparent 32%), linear-gradient(145deg, $canvasHex, $raisedHex)"
+        overlayOpacity = $overlay
+        panelOpacity = $panelOpacity
+        homeOverlayOpacity = $homeOverlay
+        taskOverlayOpacity = $taskOverlay
+    }
+    [pscustomobject]@{
+        Scheme = $scheme
+        AccentColor = $accentHex
+        AverageLuminance = [Math]::Round($averageLum, 3)
+        Palette = $palette
+    }
+}
+
 function Get-WbdsThemeCss {
     param([Parameter(Mandatory = $true)][string]$ThemePath)
 
@@ -350,4 +479,4 @@ function Remove-WbdsTheme {
     return $result
 }
 
-Export-ModuleMember -Function Get-WbdsWorkBuddyPath, Get-WbdsTarget, Wait-WbdsTarget, Invoke-WbdsCdpCommand, Get-WbdsThemeCss, Set-WbdsTheme, Remove-WbdsTheme, Get-WbdsThemes, Get-WbdsSavedThemePath, Save-WbdsThemeState, New-WbdsCustomTheme
+Export-ModuleMember -Function Get-WbdsWorkBuddyPath, Get-WbdsTarget, Wait-WbdsTarget, Invoke-WbdsCdpCommand, Get-WbdsImagePalette, Get-WbdsThemeCss, Set-WbdsTheme, Remove-WbdsTheme, Get-WbdsThemes, Get-WbdsSavedThemePath, Save-WbdsThemeState, New-WbdsCustomTheme

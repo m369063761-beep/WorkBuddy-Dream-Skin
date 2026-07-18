@@ -2,7 +2,7 @@
 
 ## Windows
 
-V0.2.1 的正式交付目标是 Windows 10/11。公开安装包和客户定制包的文件名都会包含 `Windows`。客户解压后双击安装器即可，不需要 Git、GitHub Desktop、`gh`、管理员权限、账号系统或支付系统。
+V0.2.2 的正式交付目标是 Windows 10/11。公开安装包和客户定制包的文件名都会包含 `Windows`。客户解压后双击安装器即可，不需要 Git、GitHub Desktop、`gh`、管理员权限、账号系统或支付系统。
 
 ## macOS
 

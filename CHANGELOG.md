@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2
+
+- Add fully local photo palette analysis for customer packages.
+- Detect light/dark mode and extract a dominant accent color from the customer's image.
+- Generate coordinated canvas, sidebar, surface, card, text, border and control colors with readable contrast.
+- Make `自动匹配照片（推荐）` the default Customer Pack Studio option while preserving manual palette overrides.
+- Add dark/light palette tests and automatic-palette customer-package validation.
+
 ## 0.2.1
 
 - Promote the full-window theme system to a stable release.
