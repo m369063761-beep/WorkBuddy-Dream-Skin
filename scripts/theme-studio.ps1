@@ -229,9 +229,15 @@ $restoreButton.Add_Click({
     }
 })
 
-Update-WbdsThemeList
+$preferredThemeId = $null
+$customerDefaultPath = Join-Path $projectRoot 'customer-default-theme.txt'
+if (Test-Path -LiteralPath $customerDefaultPath -PathType Leaf) {
+    $preferredThemeId = (Get-Content -LiteralPath $customerDefaultPath -Raw -Encoding ASCII).Trim()
+}
+Update-WbdsThemeList -SelectId $preferredThemeId
 if ($SmokeTest) {
     if (-not $themeList.SelectedItem) { throw 'Theme Studio did not select an initial theme.' }
+    if ($preferredThemeId -and $themeList.SelectedItem.Id -ne $preferredThemeId) { throw 'Theme Studio did not preselect the customer theme.' }
     Write-Host "PASS: Theme Studio loaded $($initialThemes.Count) themes and rendered its window." -ForegroundColor Green
     exit 0
 }

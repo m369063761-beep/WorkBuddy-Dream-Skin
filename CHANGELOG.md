@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1
+
+- Promote the full-window theme system to a stable release.
+- Theme the sidebar, menu bar, home canvas, cards, composer, task pages and profile avatar as one palette.
+- Fix light-theme readability in task titles and chat messages.
+- Add an explicit `切换 WorkBuddy 主题` Desktop shortcut.
+- Add a graphical customer-pack builder that turns a local photo into a private, installable ZIP.
+- Preselect the customer's theme after installation and include local install instructions plus SHA256 verification.
+
 ## 0.2.1-rc.1
 
 - Add a single-window graphical Theme Studio with theme previews.

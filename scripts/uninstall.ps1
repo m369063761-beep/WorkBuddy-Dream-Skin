@@ -12,7 +12,8 @@ if ($actualRoot -ne $expectedRoot) {
 $shell = New-Object -ComObject WScript.Shell
 $desktopShortcuts = @(
     (Join-Path $shell.SpecialFolders('Desktop') 'WorkBuddy Dream Skin.lnk'),
-    (Join-Path $shell.SpecialFolders('Desktop') '切换 WorkBuddy 主题.lnk')
+    (Join-Path $shell.SpecialFolders('Desktop') '切换 WorkBuddy 主题.lnk'),
+    (Join-Path $shell.SpecialFolders('Desktop') '制作客户定制包.lnk')
 )
 $startMenuFolder = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\WorkBuddy Dream Skin'
 foreach ($desktopShortcut in $desktopShortcuts) {

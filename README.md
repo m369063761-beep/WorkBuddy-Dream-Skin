@@ -2,9 +2,14 @@
 
 给腾讯 WorkBuddy 桌面端换一张会呼吸的脸。
 
-当前版本：**V0.2.1 RC1**。通过仅绑定本机的 Chrome DevTools Protocol（CDP）向 WorkBuddy 主窗口动态注入背景和样式。它不修改 `WorkBuddy.exe`、`app.asar` 或官方安装目录。
+当前版本：**V0.2.1**。通过仅绑定本机的 Chrome DevTools Protocol（CDP）向 WorkBuddy 主窗口动态注入背景和样式。它不修改 `WorkBuddy.exe`、`app.asar` 或官方安装目录。
 
 > 非腾讯官方产品。WorkBuddy 及相关商标归其权利人所有。
+
+## 平台支持
+
+- **Windows 10/11：已支持并完成实机验收。** 下载文件名包含 `Windows`。
+- **macOS：尚未发布。** macOS 需要独立启动器、安装路径、权限处理和真实 Mac 验收，不与 Windows 安装包混用。
 
 ## 当前能力
 
@@ -20,6 +25,7 @@
 - 自动发现 `themes/` 与 `themes-local/` 主题
 - `Switch Theme.cmd` 交互式一键切换并记住当前主题
 - 首页突出背景，进入任务页后自动加深蒙层
+- 客户定制包生成器：选择照片、客户名称和基础配色后生成可直接交付的 ZIP
 
 ## 快速开始
 
@@ -40,6 +46,17 @@
 在主题中心先选择一个基础样式，再点击“导入自己的图片”。图片会复制到本机 `themes-local/`，不会上传到 GitHub，也不会在重新安装时被覆盖。
 
 支持 JPG、PNG、WebP 和 GIF，大小限制为 12 MB。工具将图片转换为 data URL 后注入，避免额外启动本地 HTTP 服务。
+
+## 制作客户定制安装包
+
+双击 `制作客户定制包.cmd`，填写客户名称、选择客户照片和基础配色，然后点击“生成客户安装包”。工具会在指定文件夹生成：
+
+- `WorkBuddy-定制皮肤-客户名-Windows-v0.2.1.zip`
+- 对应的 `.sha256` 校验文件
+
+客户只需要解压 ZIP，双击 `Install WorkBuddy Dream Skin.cmd`。安装完成后主题中心会自动选中该客户的专属主题。客户不需要 Git、GitHub Desktop、`gh` 或管理员权限。
+
+客户照片只写入生成的本地 ZIP，不会上传到 GitHub。收费定制时请确认你拥有照片、人物形象和宣传素材的使用授权，不要把客户私人照片提交到公共仓库。
 
 ## V0.2 动漫主题壳
 
@@ -92,7 +109,7 @@ powershell -ExecutionPolicy Bypass -File .\tests\smoke.ps1
 
 ## MVP 范围
 
-V0.2.1 RC1 验证普通用户闭环：下载、安装、预览、导入图片、切换、记忆、恢复和卸载。托盘主题管理、自动取色、主题商店、自动更新和 macOS 支持留到后续版本。
+V0.2.1 验证普通用户闭环：下载、安装、预览、导入图片、切换、记忆、恢复和卸载；同时验证定制服务方从客户照片生成独立安装 ZIP 的交付闭环。代码签名、支付、在线后台、自动更新和 macOS 支持留到后续版本。
 
 发布前人工验收步骤见 [`docs/testing-guide.md`](docs/testing-guide.md)。
 

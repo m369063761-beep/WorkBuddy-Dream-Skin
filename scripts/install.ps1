@@ -29,6 +29,10 @@ $rootFiles = @(
     'Install WorkBuddy Dream Skin.cmd', 'Uninstall WorkBuddy Dream Skin.cmd'
 )
 foreach ($file in $rootFiles) { Copy-Item -LiteralPath (Join-Path $projectRoot $file) -Destination (Join-Path $resolvedTarget $file) -Force }
+$sellerTool = Join-Path $projectRoot '制作客户定制包.cmd'
+if (Test-Path -LiteralPath $sellerTool -PathType Leaf) {
+    Copy-Item -LiteralPath $sellerTool -Destination (Join-Path $resolvedTarget '制作客户定制包.cmd') -Force
+}
 New-Item -ItemType Directory -Path (Join-Path $resolvedTarget 'themes-local') -Force | Out-Null
 
 if (-not $NoShortcuts) {
@@ -52,6 +56,16 @@ if (-not $NoShortcuts) {
     $uninstallShortcut.TargetPath = (Join-Path $resolvedTarget 'Uninstall WorkBuddy Dream Skin.cmd')
     $uninstallShortcut.WorkingDirectory = $resolvedTarget
     $uninstallShortcut.Save()
+    $installedSellerTool = Join-Path $resolvedTarget '制作客户定制包.cmd'
+    if (Test-Path -LiteralPath $installedSellerTool -PathType Leaf) {
+        foreach ($sellerShortcutPath in @((Join-Path $desktop '制作客户定制包.lnk'), (Join-Path $startMenuFolder '制作客户定制包.lnk'))) {
+            $sellerShortcut = $shell.CreateShortcut($sellerShortcutPath)
+            $sellerShortcut.TargetPath = $installedSellerTool
+            $sellerShortcut.WorkingDirectory = $resolvedTarget
+            $sellerShortcut.Description = '用客户照片生成专属 WorkBuddy 皮肤安装包'
+            $sellerShortcut.Save()
+        }
+    }
 }
 
 Write-Host "Installed WorkBuddy Dream Skin to: $resolvedTarget" -ForegroundColor Green
