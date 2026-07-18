@@ -10,9 +10,14 @@ if ($actualRoot -ne $expectedRoot) {
 }
 
 $shell = New-Object -ComObject WScript.Shell
-$desktopShortcut = Join-Path $shell.SpecialFolders('Desktop') 'WorkBuddy Dream Skin.lnk'
+$desktopShortcuts = @(
+    (Join-Path $shell.SpecialFolders('Desktop') 'WorkBuddy Dream Skin.lnk'),
+    (Join-Path $shell.SpecialFolders('Desktop') '切换 WorkBuddy 主题.lnk')
+)
 $startMenuFolder = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\WorkBuddy Dream Skin'
-if (Test-Path -LiteralPath $desktopShortcut) { Remove-Item -LiteralPath $desktopShortcut -Force }
+foreach ($desktopShortcut in $desktopShortcuts) {
+    if (Test-Path -LiteralPath $desktopShortcut) { Remove-Item -LiteralPath $desktopShortcut -Force }
+}
 if (Test-Path -LiteralPath $startMenuFolder) { Remove-Item -LiteralPath $startMenuFolder -Recurse -Force }
 
 $backup = $null
@@ -31,4 +36,3 @@ $lines += 'del "%~f0"'
 [IO.File]::WriteAllLines($cleanup, $lines, [Text.Encoding]::ASCII)
 Start-Process -FilePath $cleanup -WindowStyle Hidden | Out-Null
 Write-Host 'Uninstall scheduled. This window will close and the installation folder will be removed.' -ForegroundColor Green
-

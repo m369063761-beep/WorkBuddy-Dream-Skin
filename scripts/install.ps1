@@ -36,11 +36,16 @@ if (-not $NoShortcuts) {
     $desktop = $shell.SpecialFolders('Desktop')
     $startMenuFolder = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\WorkBuddy Dream Skin'
     New-Item -ItemType Directory -Path $startMenuFolder -Force | Out-Null
-    foreach ($shortcutPath in @((Join-Path $desktop 'WorkBuddy Dream Skin.lnk'), (Join-Path $startMenuFolder 'WorkBuddy Dream Skin.lnk'))) {
+    foreach ($shortcutPath in @(
+        (Join-Path $desktop 'WorkBuddy Dream Skin.lnk'),
+        (Join-Path $desktop '切换 WorkBuddy 主题.lnk'),
+        (Join-Path $startMenuFolder 'WorkBuddy Dream Skin.lnk'),
+        (Join-Path $startMenuFolder '切换 WorkBuddy 主题.lnk')
+    )) {
         $shortcut = $shell.CreateShortcut($shortcutPath)
         $shortcut.TargetPath = (Join-Path $resolvedTarget 'Theme Studio.cmd')
         $shortcut.WorkingDirectory = $resolvedTarget
-        $shortcut.Description = 'WorkBuddy Dream Skin 主题中心'
+        $shortcut.Description = '打开 WorkBuddy Dream Skin 主题中心并切换主题'
         $shortcut.Save()
     }
     $uninstallShortcut = $shell.CreateShortcut((Join-Path $startMenuFolder '卸载 WorkBuddy Dream Skin.lnk'))

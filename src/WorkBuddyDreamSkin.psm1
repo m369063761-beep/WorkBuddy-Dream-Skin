@@ -137,6 +137,9 @@ function Get-WbdsThemeCss {
     }
     $replacements = @{
         '__WBDS_BACKGROUND__' = $background
+        '__WBDS_AVATAR__' = $background
+        '__WBDS_AVATAR_POSITION__' = (& $themeValue 'avatarPosition' 'center center')
+        '__WBDS_AVATAR_SIZE__' = (& $themeValue 'avatarSize' 'cover')
         '__WBDS_POSITION__' = [string]$theme.backgroundPosition
         '__WBDS_SIZE__' = [string]$theme.backgroundSize
         '__WBDS_OVERLAY__' = ([double]$theme.overlayOpacity).ToString([Globalization.CultureInfo]::InvariantCulture)

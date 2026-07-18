@@ -2,6 +2,9 @@
 html.wbds-active {
   color-scheme: __WBDS_COLOR_SCHEME__;
   --wbds-background: __WBDS_BACKGROUND__;
+  --wbds-avatar: __WBDS_AVATAR__;
+  --wbds-avatar-position: __WBDS_AVATAR_POSITION__;
+  --wbds-avatar-size: __WBDS_AVATAR_SIZE__;
   --wbds-position: __WBDS_POSITION__;
   --wbds-size: __WBDS_SIZE__;
   --wbds-overlay: __WBDS_OVERLAY__;
@@ -153,6 +156,23 @@ html.wbds-active .logo-workbuddy-title {
 html.wbds-active .conversation-list-footer {
   background: color-mix(in srgb, var(--wbds-sidebar) 88%, transparent) !important;
   border-top: 1px solid var(--wbds-line-soft) !important;
+}
+
+/* The profile mark follows the selected character theme. */
+html.wbds-active .conversation-list .user-menu-trigger-avatar {
+  overflow: hidden !important;
+  background-color: var(--wbds-surface-raised) !important;
+  background-image: var(--wbds-avatar) !important;
+  background-position: var(--wbds-avatar-position) !important;
+  background-size: var(--wbds-avatar-size) !important;
+  background-repeat: no-repeat !important;
+  border: 2px solid var(--wbds-accent) !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wbds-accent) 18%, transparent) !important;
+}
+
+html.wbds-active .conversation-list .user-menu-trigger-avatar img {
+  opacity: 0 !important;
 }
 
 /* Right column and header. */
