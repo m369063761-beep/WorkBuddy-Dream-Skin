@@ -1,4 +1,4 @@
-Set-StrictMode -Version 2.0
+﻿Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
 function Get-WbdsWorkBuddyPath {
@@ -123,12 +123,23 @@ function Get-WbdsThemeCss {
 
     $themeFile = (Resolve-Path -LiteralPath $ThemePath).Path
     $themeDirectory = Split-Path -Parent $themeFile
-    $theme = Get-Content -LiteralPath $themeFile -Raw | ConvertFrom-Json
-    $cssPath = Join-Path $themeDirectory 'theme.css'
-    $css = Get-Content -LiteralPath $cssPath -Raw
+    $theme = Get-Content -LiteralPath $themeFile -Raw -Encoding UTF8 | ConvertFrom-Json
+    $styleFile = if ($theme.PSObject.Properties['styleFile'] -and $theme.styleFile) { [string]$theme.styleFile } else { 'theme.css' }
+    $cssPath = Join-Path $themeDirectory $styleFile
+    $css = Get-Content -LiteralPath $cssPath -Raw -Encoding UTF8
     $background = ConvertTo-WbdsBackgroundValue -Theme $theme -ThemeDirectory $themeDirectory
+    $homeOverlay = if ($theme.PSObject.Properties['homeOverlayOpacity']) { [double]$theme.homeOverlayOpacity } else { [double]$theme.overlayOpacity }
+    $taskOverlay = if ($theme.PSObject.Properties['taskOverlayOpacity']) { [double]$theme.taskOverlayOpacity } else { [Math]::Min(0.85, ([double]$theme.overlayOpacity + 0.2)) }
+    $themeValue = {
+        param([string]$Name, [string]$Fallback)
+        if ($theme.PSObject.Properties[$Name] -and $theme.$Name) { return [string]$theme.$Name }
+        return $Fallback
+    }
     $replacements = @{
         '__WBDS_BACKGROUND__' = $background
+        '__WBDS_AVATAR__' = $background
+        '__WBDS_AVATAR_POSITION__' = (& $themeValue 'avatarPosition' 'center center')
+        '__WBDS_AVATAR_SIZE__' = (& $themeValue 'avatarSize' 'cover')
         '__WBDS_POSITION__' = [string]$theme.backgroundPosition
         '__WBDS_SIZE__' = [string]$theme.backgroundSize
         '__WBDS_OVERLAY__' = ([double]$theme.overlayOpacity).ToString([Globalization.CultureInfo]::InvariantCulture)
@@ -136,9 +147,128 @@ function Get-WbdsThemeCss {
         '__WBDS_BLUR__' = ([double]$theme.panelBlurPx).ToString([Globalization.CultureInfo]::InvariantCulture)
         '__WBDS_SATURATION__' = ([double]$theme.panelSaturation).ToString([Globalization.CultureInfo]::InvariantCulture)
         '__WBDS_RADIUS__' = ([double]$theme.radiusPx).ToString([Globalization.CultureInfo]::InvariantCulture)
+        '__WBDS_HOME_OVERLAY__' = $homeOverlay.ToString([Globalization.CultureInfo]::InvariantCulture)
+        '__WBDS_TASK_OVERLAY__' = $taskOverlay.ToString([Globalization.CultureInfo]::InvariantCulture)
+        '__WBDS_COLOR_SCHEME__' = (& $themeValue 'colorScheme' 'dark')
+        '__WBDS_CANVAS__' = (& $themeValue 'canvasColor' '#111522')
+        '__WBDS_SURFACE__' = (& $themeValue 'surfaceColor' '#181d2c')
+        '__WBDS_SURFACE_RAISED__' = (& $themeValue 'surfaceRaisedColor' '#22283a')
+        '__WBDS_SIDEBAR__' = (& $themeValue 'sidebarColor' '#151a29')
+        '__WBDS_TEXT__' = (& $themeValue 'textColor' '#f4f5fb')
+        '__WBDS_TEXT_MUTED__' = (& $themeValue 'mutedTextColor' '#aeb5c9')
+        '__WBDS_ACCENT__' = (& $themeValue 'accentColor' '#8b7cff')
+        '__WBDS_ACCENT_CONTRAST__' = (& $themeValue 'accentContrastColor' '#ffffff')
+        '__WBDS_BORDER__' = (& $themeValue 'borderColor' '#3d4358')
+        '__WBDS_HERO_SHADE__' = (& $themeValue 'heroShadeColor' 'rgba(17, 21, 34, 0.92)')
     }
     foreach ($key in $replacements.Keys) { $css = $css.Replace($key, $replacements[$key]) }
-    return @{ Name = [string]$theme.name; Css = $css }
+    return @{ Id = [string]$theme.id; Name = [string]$theme.name; Scheme = (& $themeValue 'colorScheme' 'dark'); Css = $css }
+}
+
+function Get-WbdsThemes {
+    param([Parameter(Mandatory = $true)][string]$ProjectRoot)
+
+    $roots = @(
+        (Join-Path $ProjectRoot 'themes'),
+        (Join-Path $ProjectRoot 'themes-local')
+    )
+    $themes = foreach ($root in $roots) {
+        if (-not (Test-Path -LiteralPath $root -PathType Container)) { continue }
+        foreach ($file in (Get-ChildItem -LiteralPath $root -Recurse -Filter theme.json -File -ErrorAction SilentlyContinue)) {
+            try {
+                $config = Get-Content -LiteralPath $file.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
+                [pscustomobject]@{
+                    Id = [string]$config.id
+                    Name = [string]$config.name
+                    Description = [string]$config.description
+                    Kind = [string]$config.kind
+                    Path = $file.FullName
+                    HasBackground = (-not $config.backgroundImage) -or (Test-Path -LiteralPath (Join-Path $file.DirectoryName ([string]$config.backgroundImage)))
+                }
+            } catch {
+                Write-Warning "Skipped invalid theme: $($file.FullName)"
+            }
+        }
+    }
+    return @($themes | Sort-Object Kind, Name)
+}
+
+function Get-WbdsStatePath {
+    param([Parameter(Mandatory = $true)][string]$ProjectRoot)
+    $stateDirectory = Join-Path $ProjectRoot 'work'
+    New-Item -ItemType Directory -Path $stateDirectory -Force | Out-Null
+    return (Join-Path $stateDirectory 'state.json')
+}
+
+function Save-WbdsThemeState {
+    param([string]$ProjectRoot, [string]$ThemeId, [string]$ThemePath)
+    @{ themeId = $ThemeId; themePath = $ThemePath; savedAt = (Get-Date).ToString('o') } |
+        ConvertTo-Json | Set-Content -LiteralPath (Get-WbdsStatePath -ProjectRoot $ProjectRoot) -Encoding UTF8
+}
+
+function Get-WbdsSavedThemePath {
+    param([string]$ProjectRoot)
+    $path = Get-WbdsStatePath -ProjectRoot $ProjectRoot
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $null }
+    try {
+        $state = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($state.themePath -and (Test-Path -LiteralPath $state.themePath -PathType Leaf)) { return [string]$state.themePath }
+    } catch {}
+    return $null
+}
+
+function New-WbdsCustomTheme {
+    param(
+        [Parameter(Mandatory = $true)][string]$ProjectRoot,
+        [Parameter(Mandatory = $true)][string]$BaseThemePath,
+        [Parameter(Mandatory = $true)][string]$BackgroundPath,
+        [string]$CustomId,
+        [string]$CustomName,
+        [string]$Description = '本地自定义背景；不会上传到仓库。',
+        [string]$BackgroundPosition,
+        [hashtable]$Palette
+    )
+
+    $image = Get-Item -LiteralPath $BackgroundPath -ErrorAction Stop
+    if ($image.Length -gt 12MB) { throw 'The background image must be 12 MB or smaller.' }
+    $extension = $image.Extension.ToLowerInvariant()
+    if ($extension -notin @('.jpg', '.jpeg', '.png', '.webp', '.gif')) { throw 'Supported image types: JPG, PNG, WebP, and GIF.' }
+
+    $config = Get-Content -LiteralPath $BaseThemePath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $baseId = ([string]$config.id) -replace '^custom-', ''
+    if (-not $baseId) { throw 'The base theme must have an id.' }
+    $customId = if ($CustomId) { $CustomId } else { "custom-$baseId" }
+    if ($customId -notmatch '^[a-z0-9][a-z0-9-]*$') { throw 'The custom theme id may only contain lowercase letters, numbers, and hyphens.' }
+    $targetDirectory = Join-Path $ProjectRoot "themes-local\$customId"
+    New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
+    Get-ChildItem -LiteralPath $targetDirectory -Filter 'background.*' -File -ErrorAction SilentlyContinue | Remove-Item -Force
+    $targetImage = Join-Path $targetDirectory ("background{0}" -f $extension)
+    Copy-Item -LiteralPath $image.FullName -Destination $targetImage -Force
+
+    $baseName = ([string]$config.name) -replace '^我的图片 · ', ''
+    $config.id = $customId
+    $config.name = if ($CustomName) { $CustomName } else { "我的图片 · $baseName" }
+    $config.description = $Description
+    $config.kind = 'custom'
+    $config.backgroundImage = [IO.Path]::GetFileName($targetImage)
+    if ($BackgroundPosition) { $config.backgroundPosition = $BackgroundPosition }
+    if ($Palette) {
+        foreach ($entry in $Palette.GetEnumerator()) {
+            if ($config.PSObject.Properties[$entry.Key]) {
+                $config.($entry.Key) = $entry.Value
+            } else {
+                $config | Add-Member -NotePropertyName $entry.Key -NotePropertyValue $entry.Value
+            }
+        }
+    }
+    if ($config.PSObject.Properties['styleFile']) {
+        $config.styleFile = '../../themes/dream/theme.css'
+    } else {
+        $config | Add-Member -NotePropertyName styleFile -NotePropertyValue '../../themes/dream/theme.css'
+    }
+    $targetConfig = Join-Path $targetDirectory 'theme.json'
+    $config | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $targetConfig -Encoding UTF8
+    return [pscustomobject]@{ Id = $customId; Path = $targetConfig; ImagePath = $targetImage }
 }
 
 function Set-WbdsTheme {
@@ -149,6 +279,7 @@ function Set-WbdsTheme {
     $theme = Get-WbdsThemeCss -ThemePath $ThemePath
     $cssLiteral = $theme.Css | ConvertTo-Json -Compress
     $nameLiteral = $theme.Name | ConvertTo-Json -Compress
+    $schemeLiteral = $theme.Scheme | ConvertTo-Json -Compress
     $expression = @"
 (() => {
   const css = $cssLiteral;
@@ -167,8 +298,18 @@ function Set-WbdsTheme {
     document.body.prepend(background);
   }
   document.documentElement.classList.add('wbds-active');
+  const updatePageMode = () => {
+    const isHome = !!document.querySelector('.main-content--welcome');
+    document.documentElement.classList.toggle('wbds-home', isHome);
+    document.documentElement.classList.toggle('wbds-task', !isHome);
+  };
+  updatePageMode();
+  if (window.__wbdsModeObserver) window.__wbdsModeObserver.disconnect();
+  window.__wbdsModeObserver = new MutationObserver(updatePageMode);
+  window.__wbdsModeObserver.observe(document.body, {subtree: true, childList: true});
   document.documentElement.dataset.wbdsTheme = $nameLiteral;
-  return { ok: true, theme: $nameLiteral, title: document.title };
+  document.documentElement.dataset.wbdsScheme = $schemeLiteral;
+  return { ok: true, theme: $nameLiteral, scheme: $schemeLiteral, title: document.title };
 })()
 "@
     $result = Invoke-WbdsCdpCommand -WebSocketUrl $WebSocketUrl -Method 'Runtime.evaluate' -Params @{
@@ -189,7 +330,13 @@ function Remove-WbdsTheme {
   document.getElementById('wbds-theme-style')?.remove();
   document.getElementById('wbds-background')?.remove();
   document.documentElement.classList.remove('wbds-active');
+  document.documentElement.classList.remove('wbds-home', 'wbds-task');
+  if (window.__wbdsModeObserver) {
+    window.__wbdsModeObserver.disconnect();
+    delete window.__wbdsModeObserver;
+  }
   delete document.documentElement.dataset.wbdsTheme;
+  delete document.documentElement.dataset.wbdsScheme;
   return { ok: true, title: document.title };
 })()
 "@
@@ -203,4 +350,4 @@ function Remove-WbdsTheme {
     return $result
 }
 
-Export-ModuleMember -Function Get-WbdsWorkBuddyPath, Get-WbdsTarget, Wait-WbdsTarget, Invoke-WbdsCdpCommand, Set-WbdsTheme, Remove-WbdsTheme
+Export-ModuleMember -Function Get-WbdsWorkBuddyPath, Get-WbdsTarget, Wait-WbdsTarget, Invoke-WbdsCdpCommand, Get-WbdsThemeCss, Set-WbdsTheme, Remove-WbdsTheme, Get-WbdsThemes, Get-WbdsSavedThemePath, Save-WbdsThemeState, New-WbdsCustomTheme

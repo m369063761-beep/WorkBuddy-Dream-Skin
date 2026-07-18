@@ -11,7 +11,10 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 Import-Module (Join-Path $projectRoot 'src\WorkBuddyDreamSkin.psm1') -Force
 
 try {
-    if (-not $ThemePath) { $ThemePath = Join-Path $projectRoot 'themes\dream\theme.json' }
+    if (-not $ThemePath) {
+        $ThemePath = Get-WbdsSavedThemePath -ProjectRoot $projectRoot
+        if (-not $ThemePath) { $ThemePath = Join-Path $projectRoot 'themes\dream\theme.json' }
+    }
     $exe = Get-WbdsWorkBuddyPath -ExplicitPath $WorkBuddyPath
     $target = Get-WbdsTarget -Port $Port
 
@@ -31,10 +34,11 @@ try {
 
     $result = Set-WbdsTheme -WebSocketUrl $target.webSocketDebuggerUrl -ThemePath $ThemePath
     $value = $result.result.value
+    $selectedConfig = Get-Content -LiteralPath $ThemePath -Raw -Encoding UTF8 | ConvertFrom-Json
+    Save-WbdsThemeState -ProjectRoot $projectRoot -ThemeId ([string]$selectedConfig.id) -ThemePath (Resolve-Path -LiteralPath $ThemePath).Path
     Write-Host "Dream Skin applied: $($value.theme)" -ForegroundColor Green
     Write-Host "CDP is bound to 127.0.0.1:$Port. Run 'Restore WorkBuddy.cmd' to remove the live theme."
 } catch {
     Write-Error $_
     exit 1
 }
-

@@ -1,4 +1,5 @@
 work/
+themes-local/
+dist/
 *.log
 .DS_Store
-

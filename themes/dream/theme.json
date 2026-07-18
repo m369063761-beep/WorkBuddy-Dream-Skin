@@ -1,5 +1,19 @@
 {
+  "id": "dream-glass",
   "name": "Dream Glass",
+  "description": "紫粉星云与深海蓝玻璃质感",
+  "kind": "built-in",
+  "colorScheme": "dark",
+  "canvasColor": "#101426",
+  "surfaceColor": "#171b31",
+  "surfaceRaisedColor": "#232844",
+  "sidebarColor": "#13172a",
+  "textColor": "#f5f2ff",
+  "mutedTextColor": "#b9b4d2",
+  "accentColor": "#9b83ff",
+  "accentContrastColor": "#ffffff",
+  "borderColor": "#514a78",
+  "heroShadeColor": "rgba(18, 20, 42, 0.93)",
   "backgroundImage": "",
   "backgroundFallback": "radial-gradient(circle at 18% 20%, #7357ff 0, transparent 34%), radial-gradient(circle at 82% 16%, #e78bbd 0, transparent 30%), linear-gradient(145deg, #16132c 0%, #24234a 46%, #101827 100%)",
   "backgroundPosition": "center center",
@@ -8,6 +22,7 @@
   "panelOpacity": 0.76,
   "panelBlurPx": 20,
   "panelSaturation": 1.12,
-  "radiusPx": 14
+  "radiusPx": 14,
+  "homeOverlayOpacity": 0.34,
+  "taskOverlayOpacity": 0.56
 }
-
